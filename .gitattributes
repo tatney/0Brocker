@@ -1,0 +1,15 @@
+* text=auto eol=lf
+
+*.bat text eol=crlf
+gradlew text eol=lf
+
+*.ttf binary
+*.png binary
+*.jar binary
+*.apk binary
+*.skwasm binary
+*.wasm binary
+
+*.sql text eol=lf
+*.sq text eol=lf
+*.sqm text eol=lf

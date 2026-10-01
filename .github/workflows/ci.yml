@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  admin:
+    name: Admin workspace
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: admin-playwright-report
+          path: admin/playwright-report
+          retention-days: 7
+
+  shared:
+    name: Shared module (JVM tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Accept Android SDK licences
+        uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/wrapper-validation@v3
+        with:
+          distribution-type: all
+
+      - name: Run JVM tests
+        run: ./gradlew :shared:jvmTest --stacktrace
+
+      - name: Assemble Android debug APK
+        run: ./gradlew :androidApp:assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 0broker-debug-apk
+          path: androidApp/build/outputs/apk/debug/*.apk
+          retention-days: 14
+          if-no-files-found: warn
