@@ -24,6 +24,7 @@ import com.homeapp.core.icons.IconTools
 import com.homeapp.core.widgets.AppBottomBar
 import com.homeapp.core.widgets.AppBottomBarItem
 import com.homeapp.data.model.ServiceCategory
+import com.homeapp.features.resident.ResidentHubScreen
 import com.homeapp.features.chat.ChatListScreen
 import com.homeapp.features.payments.PaymentsHubScreen
 import com.homeapp.features.profile.ProfileScreen
@@ -43,7 +44,7 @@ import com.homeapp.features.services.ServicesHubScreen
 private enum class ShellTab(val label: String, val icon: ImageVector) {
     HOME("Home", IconHome),
     SERVICES("Services", IconTools),
-    PAYMENTS("Payments", IconCreditCard),
+    PAYMENTS("My home", IconHome),
     CHAT("Chat", IconChat),
     PROFILE("Profile", IconPerson),
 }
@@ -57,6 +58,7 @@ fun AppShell(
     onServiceClick: (Long) -> Unit = {},
     onBookNow: (Long) -> Unit = {},
     onMyBookings: () -> Unit = {},
+    onPayments: () -> Unit = {},
     onAddMoney: () -> Unit = {},
     onSendMoney: () -> Unit = {},
     onViewAllTransactions: () -> Unit = {},
@@ -119,10 +121,10 @@ fun AppShell(
                         onOpenMap = onHomeServices,
                     )
 
-                    ShellTab.PAYMENTS -> PaymentsHubScreen(
-                        onAddMoney = onAddMoney,
-                        onSendMoney = onSendMoney,
-                        onViewAll = onViewAllTransactions,
+                    ShellTab.PAYMENTS -> ResidentHubScreen(
+                        onServices = onHomeServices,
+                        onBookings = onMyBookings,
+                        onPayments = onPayments,
                     )
 
                     ShellTab.CHAT -> ChatListScreen(onOpenThread = onOpenThread)

@@ -33,7 +33,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.homeapp.data.AppContainer
-import com.homeapp.data.model.LegacyBooking
+import com.homeapp.data.model.Booking
+import com.homeapp.data.model.AuthState
+import androidx.compose.foundation.clickable
+import kotlinx.coroutines.flow.combine
 import com.homeapp.core.icons.IconCheck
 import com.homeapp.core.icons.IconClock
 import com.homeapp.core.icons.IconClose
@@ -54,14 +57,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 
 class MyBookingsViewModel : ViewModel() {
-    val bookings: StateFlow<List<LegacyBooking>> =
-        AppContainer.serviceRepository.observeAllBookings()
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val bookings: StateFlow<List<Booking>> =
+        combine(AppContainer.marketplaceRepository.observeAllBookings(), AppContainer.authRepository.observeSession()) { rows, auth ->
+            val id = (auth as? AuthState.SignedIn)?.user?.id
+            rows.filter { it.customerId == id }.sortedByDescending { it.createdAtEpoch }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }
 
 @Composable
 fun MyBookingsScreen(
     onBack: () -> Unit = {},
+    onBooking: (Long) -> Unit = {},
     viewModel: MyBookingsViewModel = viewModel { MyBookingsViewModel() },
 ) {
     val bookings by viewModel.bookings.collectAsState()
@@ -89,17 +95,17 @@ fun MyBookingsScreen(
             }
         } else {
             items(bookings, key = { it.id }) { booking ->
-                BookingRow(booking)
+                BookingRow(booking, { onBooking(booking.id) })
             }
         }
     }
 }
 
 @Composable
-private fun BookingRow(booking: LegacyBooking) {
-    val status = bookingStatusStyle(booking.status)
+private fun BookingRow(booking: Booking, onClick: () -> Unit) {
+    val status = bookingStatusStyle(booking.status.name)
 
-    AppCard(modifier = Modifier.fillMaxWidth()) {
+    AppCard(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(
             modifier = Modifier.padding(kSpaceMD),
             verticalAlignment = Alignment.CenterVertically,
@@ -114,7 +120,7 @@ private fun BookingRow(booking: LegacyBooking) {
             Spacer(Modifier.width(kSpaceSM))
             Column(Modifier.weight(1f)) {
                 Text(
-                    text = booking.serviceName,
+                    text = booking.serviceType,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -136,7 +142,7 @@ private fun BookingRow(booking: LegacyBooking) {
                 }
             }
             Text(
-                text = formatRelativeAge(booking.bookedAtEpoch),
+                text = formatRelativeAge(booking.createdAtEpoch),
                 style = MaterialTheme.typography.labelSmall,
                 color = kTextSecondary,
             )

@@ -21,6 +21,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.remember
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -119,6 +121,9 @@ fun PropertyHubScreen(
     val filter by viewModel.filter.collectAsState()
     val properties by viewModel.properties.collectAsState()
 
+    var compared by remember { mutableStateOf<List<Property>>(emptyList()) }
+    var compareOpen by remember { mutableStateOf(false) }
+    if (compareOpen) PropertyComparison(compared) { compareOpen = false }
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = kSpaceMD, end = kSpaceMD, top = kSpaceMD, bottom = 32.dp),
@@ -134,12 +139,19 @@ fun PropertyHubScreen(
                 placeholder = "Search houses, land, cars...",
             )
         }
+        item { DiscoveryControls(viewModel) }
+        if (compared.isNotEmpty()) item {
+            Row(horizontalArrangement = Arrangement.spacedBy(kSpaceSM)) {
+                TextButton(enabled = compared.size >= 2, onClick = { compareOpen = true }) { Text("Compare " + compared.size + "/3") }
+                TextButton(onClick = { compared = emptyList() }) { Text("Clear selection") }
+            }
+        }
         item {
             QuickActionsRow(
                 modifier = Modifier.height(224.dp),
                 onSearchProperty = viewModel::clearFilters,
                 onPostProperty = onPostProperty,
-                onNewListings = onNewListings,
+                onNewListings = { viewModel.clearFilters(); viewModel.onSearchQueryChange("") },
             )
         }
         item {
@@ -169,14 +181,20 @@ fun PropertyHubScreen(
         }
         item {
             SectionHeader(
-                title = "Recommended for you",
+                title = "Your matches",
                 subtitle = "${properties.size} listing${if (properties.size == 1) "" else "s"} found",
                 actionLabel = "View all",
                 onAction = viewModel::clearFilters,
             )
         }
         items(properties, key = { it.id }) { property ->
-            PropertyCard(property, onClick = { onPropertyClick(property.id) })
+            Column {
+                PropertyCard(property, onClick = { onPropertyClick(property.id) })
+                val selected = compared.any { it.id == property.id }
+                TextButton(enabled = selected || compared.size < 3, onClick = {
+                    compared = if (selected) compared.filterNot { it.id == property.id } else compared + property
+                }) { Text(if (selected) "Remove from comparison" else "Add to comparison") }
+            }
         }
     }
 }
@@ -523,7 +541,7 @@ fun PropertyCard(property: Property, onClick: () -> Unit) {
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(kSpaceSM)) {
                 TagBadge(text = if (property.isRent()) "For rent" else "For sale", foreground = kPrimaryRed)
-                if (property.isVerified) TagBadge(text = "Verified", foreground = kAccentTeal)
+                if (property.isVerified) TagBadge(text = "Sample checked", foreground = kAccentTeal)
                 Spacer(Modifier.weight(1f))
                 StarRating(rating = property.rating, showValue = true, starSize = 12.dp)
             }

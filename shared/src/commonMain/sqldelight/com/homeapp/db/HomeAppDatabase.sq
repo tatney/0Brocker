@@ -395,3 +395,51 @@ SELECT * FROM reviews WHERE provider_id = ? ORDER BY created_at_epoch DESC;
 insertReview:
 INSERT INTO reviews(id, booking_id, provider_id, customer_id, quality, professionalism, timeliness, communication, value_rating, overall, comment, created_at_epoch)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+CREATE TABLE property_owners (
+    property_id INTEGER NOT NULL PRIMARY KEY REFERENCES properties(id),
+    owner_id INTEGER NOT NULL,
+    owner_name TEXT NOT NULL,
+    owner_declared INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE resident_notes (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    title TEXT NOT NULL,
+    detail TEXT NOT NULL,
+    done INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE saved_searches (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    query TEXT NOT NULL,
+    listing_type TEXT,
+    asset_type TEXT,
+    category TEXT,
+    max_price INTEGER,
+    verified_only INTEGER NOT NULL DEFAULT 0,
+    sort TEXT NOT NULL
+);
+
+propertyMaxId:
+SELECT COALESCE(MAX(id), 0) FROM properties;
+userMaxId:
+SELECT COALESCE(MAX(id), 0) FROM users;
+insertPropertyOwner:
+INSERT OR REPLACE INTO property_owners VALUES (?, ?, ?, ?);
+selectPropertyOwner:
+SELECT * FROM property_owners WHERE property_id = ?;
+selectBookingPayment:
+UPDATE marketplace_bookings SET payment_method = ? WHERE id = ?;
+selectResidentNotes:
+SELECT * FROM resident_notes WHERE user_id = ? ORDER BY done, id DESC;
+insertResidentNote:
+INSERT INTO resident_notes(user_id, kind, title, detail) VALUES (?, ?, ?, ?);
+completeResidentNote:
+UPDATE resident_notes SET done = ? WHERE id = ? AND user_id = ?;
+selectSavedSearches:
+SELECT * FROM saved_searches WHERE user_id = ? ORDER BY id DESC;
+insertSavedSearch:
+INSERT INTO saved_searches(user_id, query, listing_type, asset_type, category, max_price, verified_only, sort) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+deleteSavedSearch:
+DELETE FROM saved_searches WHERE id = ? AND user_id = ?;

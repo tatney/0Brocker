@@ -12,6 +12,7 @@ import com.homeapp.data.AppContainer
 import com.homeapp.data.model.ServiceCategory
 import com.homeapp.features.auth.AuthFlow
 import com.homeapp.features.chat.ChatThreadScreen
+import com.homeapp.features.payments.PaymentsHubScreen
 import com.homeapp.features.payments.AddMoneyScreen
 import com.homeapp.features.payments.SendMoneyScreen
 import com.homeapp.features.payments.TransactionsScreen
@@ -66,6 +67,7 @@ fun AppNavHost() {
                 onCategoryClick = { category -> navController.navigate(Routes.homeServicesMap(category.name)) },
                 onServiceClick = { serviceId -> navController.navigate(Routes.serviceDetail(serviceId)) },
                 onBookNow = { serviceId -> navController.navigate(Routes.serviceBooking(serviceId)) },
+                onPayments = { navController.navigate(Routes.PAYMENTS_HUB) },
                 onAddMoney = { navController.navigate(Routes.ADD_MONEY) },
                 onSendMoney = { navController.navigate(Routes.SEND_MONEY) },
                 onViewAllTransactions = { navController.navigate(Routes.TRANSACTIONS) },
@@ -86,7 +88,7 @@ fun AppNavHost() {
             route = Routes.PROPERTY_DETAIL,
             arguments = listOf(navArgument("propertyId") { type = NavType.LongType }),
         ) {
-            PropertyDetailScreen(onBack = { navController.navigateUp() })
+            PropertyDetailScreen(onBack = { navController.navigateUp() }, onOpenThread = { navController.navigate(Routes.chatThread(it)) })
         }
         composable(Routes.SAVED_HOMES) {
             SavedHomesScreen(
@@ -101,7 +103,7 @@ fun AppNavHost() {
             )
         }
         composable(Routes.MY_BOOKINGS) {
-            MyBookingsScreen(onBack = { navController.navigateUp() })
+            MyBookingsScreen(onBack = { navController.navigateUp() }, onBooking = { navController.navigate(Routes.serviceProgress(it)) })
         }
         composable(
             route = Routes.SERVICES_CATEGORY,
@@ -129,6 +131,9 @@ fun AppNavHost() {
                 onBack = { navController.navigateUp() },
                 onDone = { navController.popBackStack(Routes.MAIN, inclusive = false) },
             )
+        }
+        composable(Routes.PAYMENTS_HUB) {
+            PaymentsHubScreen(onAddMoney = { navController.navigate(Routes.ADD_MONEY) }, onSendMoney = { navController.navigate(Routes.SEND_MONEY) }, onViewAll = { navController.navigate(Routes.TRANSACTIONS) })
         }
         composable(Routes.ADD_MONEY) {
             AddMoneyScreen(

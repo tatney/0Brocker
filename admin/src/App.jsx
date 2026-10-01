@@ -1,3 +1,5 @@
+import { isTestWorkspace } from './lib/workspace.js';
+import { AdminGate } from './components/AdminGate.jsx';
 import { useEffect, useState } from 'react';
 import {
   Activity,
@@ -33,7 +35,7 @@ function readHash() {
   return NAV.some((item) => item.id === raw) ? raw : 'overview';
 }
 
-export function App() {
+function Workspace() {
   const [active, setActive] = useState(readHash);
 
   useEffect(() => {
@@ -81,10 +83,10 @@ export function App() {
           ))}
         </nav>
 
-        <div className={`conn conn-${isSupabaseConfigured ? 'live' : 'demo'}`}>
+        <div className={`conn conn-${(isSupabaseConfigured && !isTestWorkspace()) ? 'live' : 'demo'}`}>
           <Activity size={13} aria-hidden="true" />
           <span>
-            {isSupabaseConfigured ? `Live · ${projectRef}` : 'Demo mode'}
+            {isSupabaseConfigured ? `Live · ${projectRef}` : 'Test workspace � sample data'}
           </span>
         </div>
       </aside>
@@ -95,3 +97,5 @@ export function App() {
     </div>
   );
 }
+
+export function App(){return <AdminGate><Workspace/></AdminGate>;}

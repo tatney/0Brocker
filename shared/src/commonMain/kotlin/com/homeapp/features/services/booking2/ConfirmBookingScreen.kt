@@ -78,9 +78,9 @@ fun ConfirmBookingScreen(
             Spacer(Modifier.height(kSpaceMD))
 
             val booking = booking
-            val baseCost = booking?.baseCost ?: 35000
-            val platformFee = booking?.platformFee ?: 2000
-            val totalCost = booking?.totalCost ?: 37000
+            val baseCost = booking?.baseCost ?: 0
+            val platformFee = booking?.platformFee ?: 0
+            val totalCost = booking?.totalCost ?: 0
 
             // Provider card
             Box(
@@ -118,7 +118,7 @@ fun ConfirmBookingScreen(
 
             // Cost breakdown
             SummaryRow("Service cost", formatUgx(baseCost.toDouble()))
-            SummaryRow("Platform fee", formatUgx(platformFee.toDouble()))
+            SummaryRow("Brokerage fee", formatUgx(platformFee.toDouble()))
             Spacer(Modifier.height(kSpaceSM))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -150,7 +150,8 @@ fun ConfirmBookingScreen(
 
             Spacer(Modifier.height(kSpaceLG))
 
-            CTAButton(text = "Confirm Booking — ${formatUgx(totalCost.toDouble())}", onClick = { viewModel.confirm(onConfirm) }, enabled = !state.isBusy)
+            Text("Testing only. This starting-price estimate is not a final quote. No money is charged; agree scope and materials directly with the provider.", style = MaterialTheme.typography.bodySmall, color = kTextSecondary)
+            CTAButton(text = "Confirm Booking — ${formatUgx(totalCost.toDouble())}", onClick = { viewModel.confirm(onConfirm) }, enabled = booking != null && !state.isBusy)
             Spacer(Modifier.height(kSpaceMD))
         }
     }

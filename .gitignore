@@ -30,3 +30,9 @@ apk/
 # Tooling
 .vercel/
 *.log
+
+# Supabase CLI local state (project ref, pooler connection info)
+supabase/.temp/
+
+# Local release tooling and test secrets
+.scratch/

@@ -36,10 +36,11 @@ class ConfirmBookingViewModel(savedStateHandle: SavedStateHandle) : ViewModel() 
     fun updatePayment(method: String) = _uiState.update { it.copy(paymentMethod = method) }
 
     fun confirm(onConfirmed: () -> Unit) {
+        if (_booking.value == null || _uiState.value.isBusy) return
         _uiState.update { it.copy(isBusy = true) }
         viewModelScope.launch {
             delay(1000)
-            AppContainer.marketplaceRepository.updateBookingPayment(bookingId, _uiState.value.paymentMethod)
+            AppContainer.marketplaceRepository.selectPaymentMethod(bookingId, _uiState.value.paymentMethod)
             _uiState.update { it.copy(isBusy = false) }
             onConfirmed()
         }

@@ -73,6 +73,10 @@ internal class MarketplaceRepositoryImpl(
         queries.updateBookingStatus(status = status.name, id = bookingId)
     }
 
+    override suspend fun selectPaymentMethod(bookingId: Long, paymentMethod: String) {
+        queries.selectBookingPayment(payment_method = paymentMethod, id = bookingId)
+    }
+
     override suspend fun updateBookingPayment(bookingId: Long, paymentMethod: String) {
         queries.updateBookingPayment(payment_method = paymentMethod, id = bookingId)
     }

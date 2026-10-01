@@ -12,6 +12,7 @@ import com.homeapp.data.model.Property
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -23,8 +24,8 @@ enum class ListingTypeOption(
 ) {
     RENT("Rent", "RENT", IconClock, true),
     BUY("Buy", "BUY", IconShieldCheck, false),
-    PG("PG", "PG", IconBriefcase, true),
-    PLOT("Plot", "PLOT", IconTree, false),
+    PG("Shared home", "RENT", IconBriefcase, true),
+    PLOT("Land", "BUY", IconTree, false),
 }
 
 val bedroomOptions = listOf("1 RK", "1 BHK", "2 BHK", "3 BHK", "4+ BHK")
@@ -32,17 +33,18 @@ val bedroomOptions = listOf("1 RK", "1 BHK", "2 BHK", "3 BHK", "4+ BHK")
 data class PostPropertyUiState(
     val title: String = "",
     val location: String = "",
-    val city: String = "Bengaluru",
+    val city: String = "Kampala",
     val listingType: ListingTypeOption = ListingTypeOption.RENT,
     val priceText: String = "",
     val bedrooms: String = "2 BHK",
+    val ownerDeclared: Boolean = false,
     val isBusy: Boolean = false,
     val error: String? = null,
     val isDone: Boolean = false,
 ) {
     val canSubmit: Boolean
         get() = title.isNotBlank() && location.isNotBlank() &&
-            city.isNotBlank() && priceText.filter { it.isDigit() }.isNotEmpty() && !isBusy
+            ownerDeclared && city.isNotBlank() && priceText.filter { it.isDigit() }.isNotEmpty() && !isBusy
 }
 
 class PostPropertyViewModel : ViewModel() {
@@ -55,22 +57,26 @@ class PostPropertyViewModel : ViewModel() {
     fun onTitleChange(v: String) = _ui.update { it.copy(title = v.take(60), error = null) }
     fun onLocationChange(v: String) = _ui.update { it.copy(location = v.take(60), error = null) }
     fun onCityChange(v: String) = _ui.update { it.copy(city = v.take(30), error = null) }
-    fun onPriceChange(v: String) = _ui.update { it.copy(priceText = v.filter { it.isDigit() }.take(9), error = null) }
+    fun onPriceChange(v: String) = _ui.update { it.copy(priceText = v.filter { it.isDigit() }.take(13), error = null) }
     fun onBedroomsChange(v: String) = _ui.update { it.copy(bedrooms = v) }
     fun onListingTypeChange(v: ListingTypeOption) = _ui.update { it.copy(listingType = v) }
+
+    fun onOwnerDeclared(value: Boolean) = _ui.update { it.copy(ownerDeclared = value) }
 
     fun postProperty() {
         val s = _ui.value
         val amount = s.priceText.filter { it.isDigit() }.toLongOrNull() ?: 0L
-        if (s.title.isBlank() || s.location.isBlank() || amount <= 0) {
-            _ui.update { it.copy(error = "Please fill title, location and a price") }
+        if (!s.ownerDeclared || s.city.isBlank() || s.title.isBlank() || s.location.isBlank() || amount <= 0) {
+            _ui.update { it.copy(error = "Confirm you own this property and complete all required fields") }
             return
         }
         _ui.update { it.copy(isBusy = true, error = null) }
         viewModelScope.launch {
-            val id = repo.propertyCount() + 1
+            val id = com.homeapp.data.database.DatabaseProvider.database.homeAppDatabaseQueries.propertyMaxId().executeAsOne() + 1
             val priceUgx = amount.toLong()
             val priceLabel = if (s.listingType.monthly) "/mo" else ""
+            val owner = (AppContainer.authRepository.observeSession().first() as? com.homeapp.data.model.AuthState.SignedIn)?.user
+                ?: run { _ui.update { it.copy(isBusy = false, error = "Sign in to post a listing") }; return@launch }
             repo.insert(
                 Property(
                     id = id,
@@ -85,12 +91,15 @@ class PostPropertyViewModel : ViewModel() {
                     category = "RESIDENTIAL",
                     priceUgx = priceUgx,
                     priceLabel = priceLabel,
-                    rating = 4.5,
-                    isVerified = true,
+                    rating = 0.0,
+                    isVerified = false,
                     bedrooms = s.bedrooms,
                     // Legacy seed column. The UI resolves the asset icon from
                     // [assetType] now, so mirror that rather than storing a glyph.
                     emoji = s.listingType.type,
+                    ownerId = owner.id,
+                    ownerName = owner.fullName,
+                    ownerDeclared = true,
                 ),
             )
             _ui.update { it.copy(isBusy = false, isDone = true) }

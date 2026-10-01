@@ -49,15 +49,20 @@ class RequestServiceViewModel(savedStateHandle: SavedStateHandle) : ViewModel() 
 
     fun submit(onCreated: (Long) -> Unit) {
         val state = _uiState.value
-        if (state.description.isBlank()) {
-            _uiState.update { it.copy(error = "Please describe the issue") }
+        if (state.isBusy) return
+        if (state.description.isBlank() || state.locationText.isBlank()) {
+            _uiState.update { it.copy(error = "Describe the issue and provide a location") }
             return
         }
+        val scheduled = runCatching { bookingSchedule(state.urgency, state.scheduledDate, state.scheduledTime, currentTimeEpochSeconds()) }
+            .getOrElse { _uiState.update { it.copy(error = "Enter a valid future date (YYYY-MM-DD) and time (HH:mm), Kampala time") }; return }
+        if (_provider.value == null) { _uiState.update { it.copy(error = "Choose a provider before submitting") }; return }
         _uiState.update { it.copy(isBusy = true, error = null) }
         val provider = _provider.value
         viewModelScope.launch {
             val now = currentTimeEpochSeconds()
-            val customerId = (AppContainer.authRepository.observeSession().first() as? AuthState.SignedIn)?.user?.id ?: 1
+            val customerId = (AppContainer.authRepository.observeSession().first() as? AuthState.SignedIn)?.user?.id
+                ?: run { _uiState.update { it.copy(isBusy = false, error = "Sign in to book a service") }; return@launch }
             val bookingId = AppContainer.marketplaceRepository.createBooking(
                 Booking(
                     id = 0,
@@ -67,14 +72,14 @@ class RequestServiceViewModel(savedStateHandle: SavedStateHandle) : ViewModel() 
                     providerEmoji = provider?.emoji ?: "",
                     serviceType = state.serviceSubType.ifBlank { provider?.category ?: "General" },
                     description = state.description,
-                    status = BookingStatus.SEARCHING,
+                    status = BookingStatus.PROVIDER_FOUND,
                     locationText = state.locationText,
                     lat = 0.3476,
                     lng = 32.5825,
-                    baseCost = 35000,
-                    platformFee = 2000,
-                    totalCost = 37000,
-                    scheduledAt = now,
+                    baseCost = provider?.priceFrom ?: 0,
+                    platformFee = 0,
+                    totalCost = provider?.priceFrom ?: 0,
+                    scheduledAt = scheduled,
                     createdAtEpoch = now,
                 )
             )

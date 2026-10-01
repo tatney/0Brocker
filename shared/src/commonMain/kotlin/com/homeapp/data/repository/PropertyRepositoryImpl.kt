@@ -85,9 +85,12 @@ internal class PropertyRepositoryImpl(
             bedrooms = property.bedrooms,
             emoji = property.emoji,
         )
+        queries.insertPropertyOwner(property.id, property.ownerId, property.ownerName, if (property.ownerDeclared) 1L else 0L)
     }
 
-    private fun Properties.toDomain() = Property(
+    private fun Properties.toDomain(): Property {
+        val owner = queries.selectPropertyOwner(id).executeAsOneOrNull()
+        return Property(
         id = id,
         title = title,
         location = location,
@@ -101,5 +104,9 @@ internal class PropertyRepositoryImpl(
         isVerified = is_verified == 1L,
         bedrooms = bedrooms,
         emoji = emoji,
+        ownerId = owner?.owner_id ?: 0,
+        ownerName = owner?.owner_name ?: "",
+        ownerDeclared = owner?.owner_declared == 1L,
     )
+    }
 }
