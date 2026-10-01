@@ -340,10 +340,9 @@ create policy "quotes visible to participants or admin"
     select 1 from public.marketplace_bookings b
     where b.id = quotes.booking_id and b.customer_id = auth.uid()
   ));
-create policy "providers or admin manage quotes"
+create policy "admins manage quotes"
   on public.quotes for all
-  using (public.is_admin() or public.is_admin())
-  with check (public.is_admin() or public.is_admin());
+  using (public.is_admin()) with check (public.is_admin());
 
 -- Reviews: public readable, customers write their own, admins moderate.
 create policy "reviews are public readable"
