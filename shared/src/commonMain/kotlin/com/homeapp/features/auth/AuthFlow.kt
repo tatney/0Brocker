@@ -190,11 +190,6 @@ private fun SignInStep(
             visualTransformation = PasswordVisualTransformation(),
             enabled = !state.isBusy,
         )
-        Text(
-            text = "debug internal state -> email:${state.email.length} pwd:${state.password.length}",
-            style = MaterialTheme.typography.labelSmall,
-            color = kTextSecondary,
-        )
         Spacer(Modifier.height(kSpaceSM))
         CTAButton(
             text = "Sign in",

@@ -32,8 +32,8 @@ fields=[n for n in dump().iter('node') if n.attrib.get('class')=='android.widget
 assert len(fields)>=2, 'Sign-in form not visible'
 tap(fields[0]);adb('shell','input','text','tester@0brocker.app')
 fields=[n for n in dump().iter('node') if n.attrib.get('class')=='android.widget.EditText']
-tap(fields[1]);adb('shell','input','text','HomeTest!2026');adb('shell','input','keyevent','111')
-time.sleep(1);tap(text_node('Sign in'));time.sleep(5)
+tap(fields[1]);adb('shell','input','text','HomeTest!2026');adb('shell','input','keyevent','4')
+time.sleep(1);screenshot('02-credentials-entered');tap(text_node('Sign in'));time.sleep(5);screenshot('02-after-sign-in')
 assert 'V1 testing' in ET.tostring(dump(),encoding='unicode'), 'Dedicated test account did not reach home'
 screenshot('02-home')
 for label, name in [('Services','03-services'),('My home','04-my-home'),('Chat','05-chat'),('Profile','06-profile')]:
