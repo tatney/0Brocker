@@ -100,6 +100,7 @@ fun LiveTrackingScreen(
                 }
             }
 
+            Text("Test tracking: location, movement and arrival times are simulated.", style = MaterialTheme.typography.bodySmall, color = kTextSecondary)
             // Tracking map
             Box(
                 modifier = Modifier

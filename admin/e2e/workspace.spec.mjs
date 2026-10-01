@@ -20,7 +20,7 @@ test('renders the overview with summary stats and no console errors', async ({ p
 
 test('shows the demo-mode notice when Supabase is unconfigured', async ({ page }) => {
   await expect(page.locator('.conn')).toHaveText(/Demo mode|Live/);
-  await expect(page.locator('.banner').first()).toContainText('Supabase');
+  await expect(page.locator('.banner').first()).toContainText('Demo workspace');
 });
 
 test('navigates to every workspace section', async ({ page }) => {
@@ -70,8 +70,50 @@ test('shows the review scoreboard for every dimension', async ({ page }) => {
   expect(page.errors).toEqual([]);
 });
 
-test('refuses to mutate bookings while Supabase is unconfigured', async ({ page }) => {
+
+test('advances bookings using the app workflow and persists the demo change', async ({ page }) => {
   await page.getByRole('button', { name: 'Bookings', exact: true }).click();
-  await page.getByRole('button', { name: 'Confirm' }).first().click();
-  await expect(page.locator('.banner-danger')).toContainText('not configured');
+  await expect(page.locator('.table tbody tr').filter({hasText:'#1002'}).getByRole('button',{name:'Request payment'})).toHaveCount(0);
+  const row = page.locator('.table tbody tr').filter({ hasText: '#1004' });
+  await row.getByRole('button', { name: 'Mark en route', exact: true }).click();
+  await expect(row).toContainText('en route');
+  await page.reload();
+  await expect(page.locator('.table tbody tr').filter({hasText:'#1004'})).toContainText('en route');
+  expect(page.errors).toEqual([]);
+});
+
+test('verifies a demo listing and keeps the result on reload', async ({ page }) => {
+  await page.getByRole('button', { name: 'Listings', exact: true }).click();
+  const row=page.locator('.table tbody tr').filter({hasText:'Portion for Rent'});
+  await row.getByRole('button',{name:'Verify',exact:true}).click();
+  await expect(row).toContainText('Verified');
+  await page.reload();
+  await expect(page.locator('.table tbody tr').filter({hasText:'Portion for Rent'})).toContainText('Verified');
+});
+
+test('exports only filtered listing records', async ({ page }) => {
+  await page.getByRole('button', { name: 'Listings', exact: true }).click();
+  await page.getByRole('searchbox').fill('kololo');
+  const downloaded=page.waitForEvent('download');
+  await page.getByRole('button',{name:'Export CSV'}).click();
+  const download=await downloaded;
+  const {readFile}=await import('node:fs/promises');
+  const csv=await readFile(await download.path(),'utf8');
+  expect(csv).toContain('Commercial Plot in Kololo');
+  expect(csv).not.toContain('Portion for Rent');
+});
+
+test('mobile navigation remains labeled and does not overflow the viewport', async ({ page }) => {
+  await page.setViewportSize({width:375,height:812});
+  await expect(page.getByRole('button',{name:'Bookings',exact:true})).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+  await page.getByRole('button',{name:'Bookings',exact:true}).click();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
+});
+
+test('captures desktop and mobile dashboard previews', async ({ page }) => {
+  await expect(page.locator('.stat-card')).toHaveCount(6);
+  await page.screenshot({path:'test-results/dashboard-desktop.png',fullPage:true});
+  await page.setViewportSize({width:375,height:812});
+  await page.screenshot({path:'test-results/dashboard-mobile.png',fullPage:true});
 });

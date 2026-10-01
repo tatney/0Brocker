@@ -16,6 +16,7 @@ object Routes {
     const val SERVICE_BOOKING = "services/booking/{serviceId}"
     fun serviceBooking(serviceId: Long): String = "services/booking/$serviceId"
 
+    const val PAYMENTS_HUB = "payments"
     const val ADD_MONEY = "payments/add-money"
     const val SEND_MONEY = "payments/send-money"
     const val TRANSACTIONS = "payments/transactions"

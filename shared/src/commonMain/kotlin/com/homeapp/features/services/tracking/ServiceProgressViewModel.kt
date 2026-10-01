@@ -18,9 +18,10 @@ data class ServiceProgressUiState(
 ) {
     val activeIndex: Int
         get() = when (booking?.status) {
+            BookingStatus.SEARCHING, BookingStatus.PROVIDER_FOUND, BookingStatus.ASSIGNED, BookingStatus.EN_ROUTE, BookingStatus.ARRIVED -> -1
             BookingStatus.INSPECTION -> 0
             BookingStatus.MATERIALS_REQUIRED -> 2
-            BookingStatus.COMPLETED -> 4
+            BookingStatus.COMPLETED, BookingStatus.PAYMENT, BookingStatus.REVIEWED -> 4
             else -> 3
         }
 }

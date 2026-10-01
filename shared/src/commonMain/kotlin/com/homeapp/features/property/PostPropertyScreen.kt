@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -76,7 +77,7 @@ fun PostPropertyScreen(
         ) {
             Spacer(Modifier.height(kSpaceXS))
             Text(
-                text = "Reach thousands of verified tenants & buyers",
+                text = "List directly as the owner. No brokers, agents or resale leads.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = kTextSecondary,
             )
@@ -155,7 +156,7 @@ fun PostPropertyScreen(
         )
 
         Spacer(Modifier.height(kSpaceMD))
-        FieldLabel("Price (UGX per month / onwards)")
+        FieldLabel("Price (UGX; rent per month, sale total)")
         Spacer(Modifier.height(kSpaceSM))
         OutlinedTextField(
             value = state.priceText,
@@ -192,6 +193,12 @@ fun PostPropertyScreen(
             }
         }
 
+        Spacer(Modifier.height(kSpaceMD))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = state.ownerDeclared, onCheckedChange = viewModel::onOwnerDeclared)
+            Text("I own this property. I am not listing as a broker or intermediary.", style = MaterialTheme.typography.bodyMedium)
+        }
+        Text("Owner declaration is not identity or title verification. New listings remain unverified.", style = MaterialTheme.typography.bodySmall, color = kTextSecondary)
         state.error?.let { msg ->
             Spacer(Modifier.height(kSpaceSM))
             Text(text = msg, color = kPrimaryRed, style = MaterialTheme.typography.labelMedium)
@@ -241,7 +248,7 @@ private fun PostSuccess(onDone: () -> Unit = {}) {
             )
             Spacer(Modifier.height(kSpaceSM))
             Text(
-                text = "Your property is now live and visible in the Property feed.",
+                text = "Your listing is saved on this test device. Verification is pending; it is not published online.",
                 style = MaterialTheme.typography.bodyLarge,
                 color = kTextSecondary,
             )

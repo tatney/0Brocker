@@ -27,8 +27,8 @@ android {
         applicationId = "com.homeapp"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 3
-        versionName = "1.2"
+        versionCode = 4
+        versionName = "1.0.0-test.1"
     }
     packaging {
         resources {
@@ -58,7 +58,7 @@ val projectApkDir = rootProject.layout.projectDirectory.dir("apk")
 androidComponents {
     onVariants(selector().all()) { variant ->
         val upperVariant = variant.name.replaceFirstChar(Char::uppercase)
-        val apkName = "HomeApp-${variant.buildType}.apk"
+        val apkName = "0Brocker-v1.0.0-test-${variant.buildType}.apk"
         val apkOutputs = layout.buildDirectory.dir("outputs/apk/${variant.name}")
         tasks.register<Copy>("exportApk$upperVariant") {
             dependsOn("assemble$upperVariant")

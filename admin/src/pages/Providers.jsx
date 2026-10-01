@@ -1,3 +1,4 @@
+import { VerifyAction } from '../components/VerifyAction.jsx';
 import { useMemo, useState } from 'react';
 import { Download, Filter } from 'lucide-react';
 import { filterRows, useResource } from '../data/useResource.js';
@@ -21,7 +22,7 @@ const CATEGORIES = [
 ];
 
 export function Providers() {
-  const { rows, source, error, loading } = useResource('providers');
+  const { rows, setRows, source, error, loading } = useResource('providers');
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('ALL');
   const [status, setStatus] = useState('ALL');
@@ -37,6 +38,7 @@ export function Providers() {
   );
 
   const columns = [
+    { key: 'moderation', header: 'Verification', align: 'right', render: (row) => <VerifyAction name="providers" row={row} onSaved={saved=>setRows(current=>current.map(r=>r.id===saved.id?saved:r))}/> },
     { key: 'name', header: 'Provider', render: (row) => <span className="cell-strong">{row.emoji} {row.name}</span> },
     { key: 'category', header: 'Category', render: (row) => <span className="muted">{row.category?.replace(/_/g, ' ').toLowerCase()}</span> },
     { key: 'headline', header: 'Headline', render: (row) => <span className="muted truncate">{row.headline}</span> },
@@ -93,7 +95,7 @@ export function Providers() {
         <span className="toolbar-filter">
           <Filter size={14} aria-hidden="true" />
           <Select value={category} onChange={setCategory} options={CATEGORIES} label="Category" />
-          <Select value={status} onChange={setStatus} options={['ALL', 'AVAILABLE', 'BUSY', 'OFFLINE']} label="Status" />
+          <Select value={status} onChange={setStatus} options={['ALL', 'AVAILABLE', 'BUSY', 'SCHEDULED', 'OFFLINE']} label="Status" />
         </span>
       </div>
 

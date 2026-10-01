@@ -1,6 +1,8 @@
 package com.homeapp.features.auth
 
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -150,7 +152,7 @@ private fun SignInStep(
     onDone: () -> Unit,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(top = 48.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 32.dp),
         verticalArrangement = Arrangement.spacedBy(kSpaceLG),
     ) {
         AuthTitle(
@@ -166,7 +168,7 @@ private fun SignInStep(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = "H",
+                text = "0B",
                 fontFamily = PoppinsFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
@@ -187,11 +189,6 @@ private fun SignInStep(
             keyboardType = KeyboardType.Password,
             visualTransformation = PasswordVisualTransformation(),
             enabled = !state.isBusy,
-        )
-        Text(
-            text = "debug internal state -> email:${state.email.length} pwd:${state.password.length}",
-            style = MaterialTheme.typography.labelSmall,
-            color = kTextSecondary,
         )
         Spacer(Modifier.height(kSpaceSM))
         CTAButton(
@@ -215,7 +212,7 @@ private fun SignUpStep(
     onDone: () -> Unit,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(top = 48.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 32.dp),
         verticalArrangement = Arrangement.spacedBy(kSpaceLG),
     ) {
         AuthTitle(
@@ -262,7 +259,7 @@ private fun DemoHintBanner() {
             .padding(kSpaceSM),
     ) {
         Text(
-            text = "Demo build — sign in as arjun@homeapp.in / password123",
+            text = "V1 test account: tester@0brocker.app / HomeTest!2026",
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.SemiBold,
             color = kPrimaryRed,

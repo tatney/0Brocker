@@ -42,7 +42,7 @@ import com.homeapp.core.theme.kWalletNavy
 import com.homeapp.core.widgets.AppCard
 import com.homeapp.core.widgets.OutlineButton
 import com.homeapp.core.widgets.SectionHeader
-import com.homeapp.data.model.LegacyBooking
+import com.homeapp.data.model.Booking
 
 @Composable
 fun ProfileScreen(
@@ -156,7 +156,7 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun BookingRow(booking: LegacyBooking) {
+private fun BookingRow(booking: Booking) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = kSpaceSM),
         verticalAlignment = Alignment.CenterVertically,
@@ -170,7 +170,7 @@ private fun BookingRow(booking: LegacyBooking) {
         Spacer(Modifier.width(kSpaceSM))
         Column(Modifier.weight(1f)) {
             Text(
-                text = booking.serviceName,
+                text = booking.serviceType,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -182,7 +182,7 @@ private fun BookingRow(booking: LegacyBooking) {
             )
         }
         Text(
-            text = booking.status,
+            text = booking.status.label,
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.SemiBold,
             color = kPrimaryRed,

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { BOOKING_STATUSES, NEXT_ACTION } from '../lib/metrics.js';
 import { Download, Filter, Radio } from 'lucide-react';
 import { filterRows, useResource } from '../data/useResource.js';
 import { subscribeToBookings, updateBookingStatus } from '../data/api.js';
@@ -15,13 +16,7 @@ import {
   StatusPill,
 } from '../components/ui.jsx';
 
-const STATUSES = ['ALL', 'SEARCHING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
-const NEXT_ACTION = {
-  SEARCHING: { label: 'Confirm', value: 'CONFIRMED' },
-  CONFIRMED: { label: 'Start', value: 'IN_PROGRESS' },
-  IN_PROGRESS: { label: 'Complete', value: 'COMPLETED' },
-  COMPLETED: { label: 'Reopen', value: 'IN_PROGRESS' },
-};
+const STATUSES = ['ALL', ...BOOKING_STATUSES];
 
 export function Bookings() {
   const { rows, setRows, source, error, loading, reload } = useResource('bookings');
@@ -51,12 +46,12 @@ export function Bookings() {
   );
 
   const advance = async (row) => {
-    const action = NEXT_ACTION[row.status];
+    const action = row.status === 'COMPLETED' && row.is_paid ? null : NEXT_ACTION[row.status];
     if (!action) return;
     setPendingId(row.id);
     setNotice(null);
 
-    const result = await updateBookingStatus(row.id, action.value);
+    const result = await updateBookingStatus(row.id, action.value, row.status);
 
     if (result.error) {
       setNotice({ tone: 'danger', text: result.error });
@@ -90,7 +85,7 @@ export function Bookings() {
       header: '',
       align: 'right',
       render: (row) => {
-        const action = NEXT_ACTION[row.status];
+        const action = row.status === 'COMPLETED' && row.is_paid ? null : NEXT_ACTION[row.status];
         if (!action) return <span className="muted">—</span>;
         return (
           <Button
@@ -136,7 +131,7 @@ export function Bookings() {
       />
       {error ? <Banner tone="danger">{error}</Banner> : null}
       {source === 'demo' && !error ? (
-        <Banner tone="warn">Showing bundled demo records. Status changes require a configured Supabase project.</Banner>
+        <Banner tone="warn">Showing bundled demo records. Changes to demo records stay in this browser.</Banner>
       ) : null}
       {notice ? <Banner tone={notice.tone}>{notice.text}</Banner> : null}
 

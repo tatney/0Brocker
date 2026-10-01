@@ -16,6 +16,7 @@ interface MarketplaceRepository {
     fun observeBookingById(id: Long): Flow<Booking?>
     suspend fun createBooking(booking: Booking): Long
     suspend fun updateBookingStatus(bookingId: Long, status: BookingStatus)
+    suspend fun selectPaymentMethod(bookingId: Long, paymentMethod: String)
     suspend fun updateBookingPayment(bookingId: Long, paymentMethod: String)
     suspend fun updateBookingCost(bookingId: Long, additionalCost: Long, totalCost: Long)
     suspend fun bookingCount(): Long

@@ -1,5 +1,7 @@
 ﻿package com.homeapp.features.services.booking2
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -58,8 +60,8 @@ data class RequestUiState(
     val canSubmit: Boolean get() = description.isNotBlank() && !isBusy
 }
 
-private val subTypes = listOf("Water Leak", "Pipe Repair", "Installation", "Drainage", "General", "Emergency")
-private val urgencyOptions = listOf("NOW", "Today", "Tomorrow", "Schedule")
+private val subTypes = listOf("Inspection", "Repair", "Installation", "Maintenance", "General")
+private val urgencyOptions = listOf("NOW", "Schedule")
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -76,6 +78,7 @@ fun RequestServiceScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = kSpaceMD),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -163,6 +166,14 @@ fun RequestServiceScreen(
 
             Spacer(Modifier.height(kSpaceMD))
 
+            if (state.urgency == "Schedule") {
+                OutlinedTextField(value = state.scheduledDate, onValueChange = viewModel::updateScheduledDate,
+                    label = { Text("Date (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                Spacer(Modifier.height(kSpaceSM))
+                OutlinedTextField(value = state.scheduledTime, onValueChange = viewModel::updateScheduledTime,
+                    label = { Text("Time (HH:mm), Kampala") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                Spacer(Modifier.height(kSpaceMD))
+            }
             Text("Service location", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(kSpaceSM))
             OutlinedTextField(
@@ -180,10 +191,10 @@ fun RequestServiceScreen(
                 Text(it, color = kPrimaryRed, style = MaterialTheme.typography.labelMedium)
             }
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(kSpaceMD))
 
             CTAButton(
-                text = "Find Providers",
+                text = "Review request",
                 onClick = { viewModel.submit(onSubmit) },
                 enabled = state.canSubmit,
             )

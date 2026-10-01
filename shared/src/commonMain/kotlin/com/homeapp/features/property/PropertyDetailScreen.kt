@@ -20,6 +20,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -63,11 +68,17 @@ import com.homeapp.data.model.Property
 @Composable
 fun PropertyDetailScreen(
     onBack: () -> Unit,
+    onOpenThread: (Long) -> Unit = {},
     mapContract: MapContract = StaticMapPlaceholder,
     viewModel: PropertyDetailViewModel = viewModel(),
 ) {
     val property by viewModel.property.collectAsState()
     val saved by viewModel.isSaved.collectAsState()
+    var showContact by remember { mutableStateOf(false) }
+    if (showContact) AlertDialog(onDismissRequest = { showContact = false }, title = { Text("Direct owner contact") },
+        text = { Text("No owner phone number has been supplied. You can test a direct conversation on this device; messages are not delivered to a real owner in v1.") },
+        confirmButton = { TextButton(onClick = { showContact = false; viewModel.messageOwner(onOpenThread) }) { Text("Test conversation") } },
+        dismissButton = { TextButton(onClick = { showContact = false }) { Text("Close") } })
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -81,14 +92,14 @@ fun PropertyDetailScreen(
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(kSpaceSM)) {
                         OutlineButton(
-                            text = "Call",
-                            onClick = {},
+                            text = "Contact",
+                            onClick = { showContact = true },
                             icon = IconPhone,
                             modifier = Modifier.weight(1f),
                         )
                         CTAButton(
-                            text = "Chat now",
-                            onClick = {},
+                            text = "Message owner",
+                            onClick = { viewModel.messageOwner(onOpenThread) },
                             icon = IconChat,
                             modifier = Modifier.weight(1.4f),
                         )
@@ -219,7 +230,7 @@ private fun PriceBanner(property: Property) {
             Spacer(Modifier.width(kSpaceSM))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (property.isVerified) {
-                    TagBadge(text = "Verified", foreground = kAccentTeal)
+                    TagBadge(text = "Sample checked", foreground = kAccentTeal)
                 }
             }
         }
@@ -288,10 +299,7 @@ private fun DescriptionSection(property: Property) {
     Column(modifier = Modifier.padding(top = kSpaceMD)) {
         SectionTitle("About this ${if (property.isRent()) "rental" else "property"}")
         Text(
-            text = "A ${property.bedrooms} home in the heart of ${property.city}. " +
-                "Located at ${property.location}, this ${if (property.isRent()) "rented" else "listed"} unit is " +
-                (if (property.isVerified) "verified and ready to view. " else "available to view. ") +
-                "Semi-furnished interiors, good ventilation and close to transit and markets.",
+            text = "Located at " + property.location + ", " + property.city + ". Confirm the condition, deposit, measurements and ownership documents directly with the owner before committing. V1 sample listings and map locations are illustrative.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = kSpaceMD),
@@ -333,25 +341,25 @@ private fun LandlordCard(property: Property) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 AppAvatar(
-                    name = if (property.isRent()) "Landlord" else "Agent",
+                    name = property.ownerName.ifBlank { "Property owner" },
                     size = 48.dp,
                 )
                 Spacer(Modifier.width(kSpaceSM))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = if (property.isRent()) "Landlord" else "Agent",
+                        text = property.ownerName.ifBlank { "Property owner" },
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        text = "Responds within 1 hour",
+                        text = "Direct contact - no intermediary",
                         style = MaterialTheme.typography.labelSmall,
                         color = kTextSecondary,
                     )
                 }
                 Text(
-                    text = "Verified",
+                    text = if (property.ownerDeclared) "Owner declared" else "Sample listing",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = kAccentTeal,

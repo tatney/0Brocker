@@ -19,6 +19,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -133,6 +140,8 @@ fun ServiceMapScreen(
             onCategorySelect = viewModel::onCategorySelect,
             isMapView = uiState.isMapView,
             onToggleView = viewModel::toggleView,
+            sort = uiState.sortBy, onSort = viewModel::onSortChange,
+            availableOnly = uiState.availableOnly, onAvailable = viewModel::onAvailableChange,
             onBack = onBack,
         )
 
@@ -190,11 +199,15 @@ private fun ExploreHeader(
     onCategorySelect: (ServiceCategory) -> Unit,
     isMapView: Boolean,
     onToggleView: () -> Unit,
+    sort: SortOption, onSort: (SortOption) -> Unit,
+    availableOnly: Boolean, onAvailable: (Boolean) -> Unit,
     onBack: () -> Unit,
 ) {
+    var sortOpen by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .background(kSurface.copy(alpha = 0.96f))
             .padding(horizontal = AppSpacing.gutter, vertical = AppSpacing.item),
     ) {
         Row(
@@ -224,6 +237,16 @@ private fun ExploreHeader(
 
         Spacer(Modifier.height(AppSpacing.item))
 
+        Text("Sample locations; distances use Kampala centre, not GPS.", style = MaterialTheme.typography.labelSmall, color = kTextSecondary)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            FilterChip(selected = availableOnly, onClick = { onAvailable(!availableOnly) }, label = { Text("Available only") })
+            Box {
+                TextButton(onClick = { sortOpen = true }) { Text(sort.label) }
+                DropdownMenu(expanded = sortOpen, onDismissRequest = { sortOpen = false }) {
+                    SortOption.entries.forEach { option -> DropdownMenuItem(text = { Text(option.label) }, onClick = { onSort(option); sortOpen = false }) }
+                }
+            }
+        }
         CategoryPillRow(
             selected = selectedCategory,
             onSelect = onCategorySelect,
@@ -297,7 +320,7 @@ private fun BrowseProviderList(
         contentPadding = PaddingValues(
             start = AppSpacing.gutter,
             end = AppSpacing.gutter,
-            top = 190.dp,
+            top = 275.dp,
             bottom = kSpaceXL + kSpaceLG,
         ),
         verticalArrangement = Arrangement.spacedBy(AppSpacing.card),
@@ -354,7 +377,7 @@ private fun ProviderListCard(
                             Spacer(Modifier.width(kSpaceXS))
                             Icon(
                                 imageVector = IconShieldCheck,
-                                contentDescription = "Verified",
+                                contentDescription = "Sample checked profile",
                                 tint = kAccentTeal,
                                 modifier = Modifier.size(14.dp),
                             )
@@ -444,7 +467,7 @@ fun ProviderPreviewSheet(
                     )
                     if (provider.isVerified) {
                         Spacer(Modifier.width(kSpaceXS))
-                        TagBadge(text = "Verified", foreground = kAccentTeal, background = colors.container)
+                        TagBadge(text = "Sample checked", foreground = kAccentTeal, background = colors.container)
                     }
                 }
                 Spacer(Modifier.height(2.dp))

@@ -21,6 +21,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.remember
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -119,6 +121,9 @@ fun PropertyHubScreen(
     val filter by viewModel.filter.collectAsState()
     val properties by viewModel.properties.collectAsState()
 
+    var compared by remember { mutableStateOf<List<Property>>(emptyList()) }
+    var compareOpen by remember { mutableStateOf(false) }
+    if (compareOpen) PropertyComparison(compared) { compareOpen = false }
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = kSpaceMD, end = kSpaceMD, top = kSpaceMD, bottom = 32.dp),
@@ -134,49 +139,35 @@ fun PropertyHubScreen(
                 placeholder = "Search houses, land, cars...",
             )
         }
-        item {
-            QuickActionsRow(
-                modifier = Modifier.height(224.dp),
-                onSearchProperty = viewModel::clearFilters,
-                onPostProperty = onPostProperty,
-                onNewListings = onNewListings,
-            )
+        item { DiscoveryControls(viewModel) }
+        if (compared.isNotEmpty()) item {
+            Row(horizontalArrangement = Arrangement.spacedBy(kSpaceSM)) {
+                TextButton(enabled = compared.size >= 2, onClick = { compareOpen = true }) { Text("Compare " + compared.size + "/3") }
+                TextButton(onClick = { compared = emptyList() }) { Text("Clear selection") }
+            }
         }
         item {
-            HomeServicesSection(
-                onBannerClick = onHomeServices,
-                onCategoryClick = onServiceCategoryClick,
-            )
-        }
-        item {
-            PackersMoversCard(onClick = onPackersMovers)
+            Row(horizontalArrangement = Arrangement.spacedBy(kSpaceSM)) {
+                TextButton(onClick = onPostProperty) { Text("Post as owner") }
+                TextButton(onClick = onSavedClick) { Text("Saved listings") }
+            }
         }
         item {
             SectionHeader(
-                title = "Explore Property",
-                subtitle = "Rent · Buy · Sale — Kampala",
-                actionLabel = "Saved",
-                onAction = onSavedClick,
-            )
-        }
-        item {
-            FilterChips(
-                filter = filter,
-                onListingType = { viewModel.onListingTypeChange(it) },
-                onAssetType = { viewModel.onAssetTypeChange(it) },
-                onCategory = { viewModel.onCategoryChange(it) },
-            )
-        }
-        item {
-            SectionHeader(
-                title = "Recommended for you",
+                title = "Your matches",
                 subtitle = "${properties.size} listing${if (properties.size == 1) "" else "s"} found",
                 actionLabel = "View all",
                 onAction = viewModel::clearFilters,
             )
         }
         items(properties, key = { it.id }) { property ->
-            PropertyCard(property, onClick = { onPropertyClick(property.id) })
+            Column {
+                PropertyCard(property, onClick = { onPropertyClick(property.id) })
+                val selected = compared.any { it.id == property.id }
+                TextButton(enabled = selected || compared.size < 3, onClick = {
+                    compared = if (selected) compared.filterNot { it.id == property.id } else compared + property
+                }) { Text(if (selected) "Remove from comparison" else "Add to comparison") }
+            }
         }
     }
 }
@@ -186,7 +177,7 @@ private fun HeroHeader() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(156.dp)
+            .height(120.dp)
             .clip(kRadiusXL)
             .background(
                 Brush.linearGradient(
@@ -271,7 +262,7 @@ private fun QuickActionsRow(
                 icon = IconSparkle,
                 iconSize = 20.dp,
                 title = "New Listings",
-                subtitle = "Verified properties",
+                subtitle = "Browse sample properties",
                 gradient = Brush.linearGradient(listOf(Color(0xFF565E69), Color(0xFF737D88))),
                 onClick = onNewListings,
             )
@@ -367,7 +358,7 @@ private fun HomeServicesSection(
     Column {
         SectionHeader(
             title = "Home Services",
-            subtitle = "Verified pros, doorstep service",
+            subtitle = "Choose a provider directly",
             actionLabel = "Open map",
             onAction = onBannerClick,
             actionIcon = IconMap,
@@ -523,7 +514,7 @@ fun PropertyCard(property: Property, onClick: () -> Unit) {
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(kSpaceSM)) {
                 TagBadge(text = if (property.isRent()) "For rent" else "For sale", foreground = kPrimaryRed)
-                if (property.isVerified) TagBadge(text = "Verified", foreground = kAccentTeal)
+                if (property.isVerified) TagBadge(text = "Sample checked", foreground = kAccentTeal)
                 Spacer(Modifier.weight(1f))
                 StarRating(rating = property.rating, showValue = true, starSize = 12.dp)
             }

@@ -8,6 +8,15 @@ internal object SeedData {
     private const val DEMO_EMAIL = "arjun@homeapp.in"
     private const val DEMO_PASSWORD = "password123"
 
+    fun ensureTestAccount(db: HomeAppDatabase) {
+        val q = db.homeAppDatabaseQueries
+        val email = "tester@0brocker.app"
+        if (q.selectUserByEmail(email).executeAsOneOrNull() == null) {
+            q.insertUser(q.userMaxId().executeAsOne() + 1, "Alex Tester", "", email, "TEST", 0,
+                PasswordHasher.hash("HomeTest!2026", email))
+        }
+    }
+
     fun seed(db: HomeAppDatabase) {
         val q = db.homeAppDatabaseQueries
 

@@ -113,6 +113,7 @@ TagBadge(text = state.booking?.status?.label ?: "In Progress", foreground = kAcc
 
             Spacer(Modifier.height(kSpaceLG))
 
+            Text("Testing only: progress is recorded locally; no real provider is dispatched.", style = MaterialTheme.typography.bodySmall, color = kTextSecondary)
             Text("Job Status", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(kSpaceSM))
 
@@ -179,9 +180,9 @@ TagBadge(text = state.booking?.status?.label ?: "In Progress", foreground = kAcc
             Spacer(Modifier.height(kSpaceLG))
 
             CTAButton(
-                text = "Mark as Completed",
+                text = "Simulate completion",
                 onClick = { viewModel.markCompleted(onComplete) },
-                enabled = !state.isMarkingCompleted,
+                enabled = state.booking != null && !state.isMarkingCompleted && state.booking?.isPaid != true,
             )
             Spacer(Modifier.height(kSpaceMD))
         }

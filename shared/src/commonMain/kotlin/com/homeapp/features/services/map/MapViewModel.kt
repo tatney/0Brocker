@@ -20,6 +20,7 @@ data class MapUiState(
     val selectedProvider: ServiceProvider? = null,
     val isMapView: Boolean = true,
     val sortBy: SortOption = SortOption.RECOMMENDED,
+    val availableOnly: Boolean = false,
 )
 
 enum class SortOption(val label: String) {
@@ -27,7 +28,7 @@ enum class SortOption(val label: String) {
     NEAREST("Nearest"),
     HIGHEST_RATED("Highest Rated"),
     LOWEST_PRICE("Lowest Price"),
-    FASTEST("Fastest Arrival"),
+    FASTEST("Estimated travel"),
 }
 
 class MapViewModel : ViewModel() {
@@ -62,7 +63,7 @@ class MapViewModel : ViewModel() {
                     provider.name.contains(state.searchQuery, ignoreCase = true) ||
                     provider.category.contains(state.searchQuery, ignoreCase = true) ||
                     provider.headline.contains(state.searchQuery, ignoreCase = true)
-                matchesCategory && matchesSearch
+                matchesCategory && matchesSearch && (!state.availableOnly || provider.status == com.homeapp.data.model.ProviderStatus.AVAILABLE)
             }
             when (state.sortBy) {
                 SortOption.NEAREST -> filtered.sortedBy { it.distanceKm }
@@ -84,6 +85,8 @@ class MapViewModel : ViewModel() {
     fun onProviderSelect(provider: ServiceProvider?) {
         _uiState.update { it.copy(selectedProvider = provider) }
     }
+
+    fun onAvailableChange(value: Boolean) { _uiState.update { it.copy(availableOnly = value) } }
 
     fun onSortChange(sort: SortOption) {
         _uiState.update { it.copy(sortBy = sort) }

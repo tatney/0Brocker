@@ -2,6 +2,15 @@ import { formatOneDecimal } from '../lib/format.js';
 
 const STATUS_TONES = {
   COMPLETED: 'success',
+  REVIEWED: 'success',
+  ASSIGNED: 'info',
+  PROVIDER_FOUND: 'info',
+  EN_ROUTE: 'info',
+  ARRIVED: 'info',
+  INSPECTION: 'warn',
+  MATERIALS_REQUIRED: 'warn',
+  PAYMENT: 'warn',
+  SCHEDULED: 'info',
   CONFIRMED: 'info',
   IN_PROGRESS: 'accent',
   SEARCHING: 'warn',
@@ -27,7 +36,7 @@ export function StatCard({ label, value, hint, icon: Icon, tone = 'default', onC
     <div
       className={`stat-card tone-${tone}${interactive ? ' is-clickable' : ''}`}
       onClick={onClick}
-      onKeyDown={interactive ? (event) => event.key === 'Enter' && onClick() : undefined}
+      onKeyDown={interactive ? (event) => ['Enter',' '].includes(event.key) && (event.preventDefault(), onClick()) : undefined}
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
     >
