@@ -1,0 +1,4 @@
+-- Migration 1 -> 2: switch auth from phone + OTP to email + password.
+ALTER TABLE users ADD COLUMN password_hash TEXT NOT NULL DEFAULT '';
+
+ALTER TABLE auth_sessions ADD COLUMN email TEXT;

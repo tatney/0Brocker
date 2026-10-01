@@ -1,0 +1,397 @@
+-- HomeApp super-app SQL schema (local-first SQLDelight data layer).
+-- All money is stored as integer paise (paise = integer rupees * 100, fraction in paise)
+-- to avoid floating point drift. Timestamps are integer epoch seconds.
+
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY,
+    full_name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    email TEXT,
+    avatar_emoji TEXT NOT NULL DEFAULT '🙂',
+    is_professional INTEGER NOT NULL DEFAULT 0,
+    password_hash TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE properties (
+    id INTEGER PRIMARY KEY,
+    title TEXT NOT NULL,
+    location TEXT NOT NULL,
+    city TEXT NOT NULL,
+    listing_type TEXT NOT NULL,             -- RENT | BUY | PG | PLOT
+    asset_type TEXT NOT NULL DEFAULT 'HOUSE',   -- HOUSE | LAND | CAR
+    property_category TEXT NOT NULL DEFAULT 'RESIDENTIAL',  -- RESIDENTIAL | COMMERCIAL
+    price_ugx INTEGER NOT NULL,
+    price_label TEXT NOT NULL,              -- display suffix, e.g. "/mo" or "onwards"
+    rating REAL NOT NULL,
+    is_verified INTEGER NOT NULL DEFAULT 1,
+    bedrooms TEXT NOT NULL DEFAULT '—',
+    emoji TEXT NOT NULL DEFAULT '🏠'
+);
+
+CREATE TABLE service_professionals (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    emoji TEXT NOT NULL DEFAULT '👩',
+    category TEXT NOT NULL,                 -- Salon | Plumber | Electrician | Cleaning | AC Repair | Appliance ...
+    rating REAL NOT NULL,
+    bookings_count INTEGER NOT NULL DEFAULT 0,
+    headline TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE service_bookings (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    professional_id INTEGER NOT NULL,
+    service_name TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'PENDING', -- PENDING | CONFIRMED | COMPLETED | CANCELLED
+    amount_paise INTEGER NOT NULL,
+    booked_at_epoch INTEGER NOT NULL
+);
+
+CREATE TABLE wallet_accounts (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    balance_paise INTEGER NOT NULL DEFAULT 0,
+    currency TEXT NOT NULL DEFAULT 'INR',
+    card_last4 TEXT NOT NULL DEFAULT '',
+    card_type TEXT NOT NULL DEFAULT '',
+    card_name TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE wallet_transactions (
+    id INTEGER PRIMARY KEY,
+    account_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    meta TEXT NOT NULL DEFAULT '',
+    amount_paise INTEGER NOT NULL,          -- signed: + credit, - debit
+    is_credit INTEGER NOT NULL,
+    created_at_epoch INTEGER NOT NULL
+);
+
+-- ===== users =====
+selectAllUsers:
+SELECT * FROM users;
+
+selectUserByPhone:
+SELECT * FROM users WHERE phone = ? LIMIT 1;
+
+selectUserByEmail:
+SELECT * FROM users WHERE email = ? LIMIT 1;
+
+updateUserProfile:
+UPDATE users SET full_name = ?, avatar_emoji = ? WHERE id = ?;
+
+updateUserPassword:
+UPDATE users SET password_hash = ? WHERE id = ?;
+
+userCount:
+SELECT COUNT(*) FROM users;
+
+insertUser:
+INSERT INTO users(id, full_name, phone, email, avatar_emoji, is_professional, password_hash)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+-- ===== auth sessions =====
+CREATE TABLE IF NOT EXISTS auth_sessions (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    phone TEXT NOT NULL,
+    email TEXT,
+    otp_code TEXT NOT NULL,
+    otp_expires_epoch INTEGER NOT NULL,
+    is_onboarded INTEGER NOT NULL DEFAULT 0
+);
+
+selectActiveSession:
+SELECT * FROM auth_sessions ORDER BY otp_expires_epoch DESC LIMIT 1;
+
+clearSessions:
+DELETE FROM auth_sessions;
+
+upsertSession:
+INSERT OR REPLACE INTO auth_sessions(
+    id, user_id, phone, email, otp_code, otp_expires_epoch, is_onboarded)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+-- ===== properties =====
+selectAllProperties:
+SELECT * FROM properties ORDER BY rating DESC;
+
+searchProperties:
+SELECT * FROM properties
+WHERE title LIKE '%' || :query || '%'
+   OR location LIKE '%' || :query || '%'
+ORDER BY rating DESC;
+
+propertiesByType:
+SELECT * FROM properties WHERE listing_type = ? ORDER BY rating DESC;
+
+propertiesByFilters:
+SELECT * FROM properties
+WHERE (:listingType IS NULL OR listing_type = :listingType)
+  AND (:assetType IS NULL OR asset_type = :assetType)
+  AND (:category IS NULL OR property_category = :category)
+ORDER BY rating DESC;
+
+selectPropertyById:
+SELECT * FROM properties WHERE id = ?;
+
+insertProperty:
+INSERT INTO properties(id, title, location, city, listing_type, asset_type, property_category, price_ugx, price_label, rating, is_verified, bedrooms, emoji)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+propertyCount:
+SELECT COUNT(*) FROM properties;
+
+-- ===== property favorites =====
+CREATE TABLE IF NOT EXISTS favorites (
+    property_id INTEGER PRIMARY KEY,
+    created_at_epoch INTEGER NOT NULL
+);
+
+insertFavorite:
+INSERT OR REPLACE INTO favorites(property_id, created_at_epoch) VALUES (?, ?);
+
+deleteFavorite:
+DELETE FROM favorites WHERE property_id = ?;
+
+isFavorite:
+SELECT COUNT(*) FROM favorites WHERE property_id = ?;
+
+favoritesCount:
+SELECT COUNT(*) FROM favorites;
+
+favoriteProperties:
+SELECT properties.* FROM properties
+JOIN favorites ON favorites.property_id = properties.id
+ORDER BY favorites.created_at_epoch DESC;
+
+-- ===== service professionals =====
+selectAllProfessionals:
+SELECT * FROM service_professionals ORDER BY rating DESC;
+
+professionalsByCategory:
+SELECT * FROM service_professionals WHERE category = ? ORDER BY rating DESC;
+
+selectProfessionalById:
+SELECT * FROM service_professionals WHERE id = ?;
+
+insertProfessional:
+INSERT INTO service_professionals(id, name, emoji, category, rating, bookings_count, headline)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+-- ===== service bookings =====
+selectAllBookings:
+SELECT * FROM service_bookings ORDER BY booked_at_epoch DESC;
+
+selectBookingsForProfessional:
+SELECT * FROM service_bookings WHERE professional_id = ? ORDER BY booked_at_epoch DESC;
+
+bookingCount:
+SELECT COUNT(*) FROM service_bookings;
+
+insertBooking:
+INSERT INTO service_bookings(id, user_id, professional_id, service_name, status, amount_paise, booked_at_epoch)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+-- ===== wallet =====
+selectPrimaryAccount:
+SELECT * FROM wallet_accounts LIMIT 1;
+
+insertAccount:
+INSERT INTO wallet_accounts(id, user_id, balance_paise, currency, card_last4, card_type, card_name)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+updateAccountBalance:
+UPDATE wallet_accounts SET balance_paise = ? WHERE id = ?;
+
+selectAllTransactions:
+SELECT * FROM wallet_transactions ORDER BY created_at_epoch DESC;
+
+recentTransactions:
+SELECT * FROM wallet_transactions ORDER BY created_at_epoch DESC LIMIT :limit;
+
+transactionCount:
+SELECT COUNT(*) FROM wallet_transactions;
+
+insertTransaction:
+INSERT INTO wallet_transactions(id, account_id, title, meta, amount_paise, is_credit, created_at_epoch)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+-- ===== chat =====
+CREATE TABLE IF NOT EXISTS conversations (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    avatar_emoji TEXT NOT NULL,
+    last_message TEXT NOT NULL,
+    last_message_at_epoch INTEGER NOT NULL,
+    unread_count INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY,
+    conversation_id INTEGER NOT NULL,
+    sender TEXT NOT NULL,
+    text TEXT NOT NULL,
+    created_at_epoch INTEGER NOT NULL
+);
+
+selectAllConversations:
+SELECT * FROM conversations ORDER BY last_message_at_epoch DESC;
+
+insertConversation:
+INSERT OR REPLACE INTO conversations(id, name, avatar_emoji, last_message, last_message_at_epoch, unread_count)
+VALUES (?, ?, ?, ?, ?, ?);
+
+selectConversationById:
+SELECT * FROM conversations WHERE id = ?;
+
+conversationCount:
+SELECT COUNT(*) FROM conversations;
+
+selectMessagesForConversation:
+SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at_epoch ASC;
+
+messageCount:
+SELECT COUNT(*) FROM messages WHERE conversation_id = ?;
+
+insertMessage:
+INSERT INTO messages(id, conversation_id, sender, text, created_at_epoch)
+VALUES (?, ?, ?, ?, ?);
+
+updateConversationLast:
+UPDATE conversations SET last_message = ?, last_message_at_epoch = ?, unread_count = 0 WHERE id = ?;
+
+messageMaxId:
+SELECT COALESCE(MAX(id), 0) FROM messages;
+
+unreadTotal:
+SELECT COALESCE(SUM(unread_count), 0) FROM conversations;
+
+-- ===== service providers (marketplace) =====
+CREATE TABLE IF NOT EXISTS service_providers (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    emoji TEXT NOT NULL DEFAULT '🔧',
+    category TEXT NOT NULL,
+    rating REAL NOT NULL DEFAULT 4.5,
+    reviews_count INTEGER NOT NULL DEFAULT 0,
+    jobs_completed INTEGER NOT NULL DEFAULT 0,
+    experience_years INTEGER NOT NULL DEFAULT 1,
+    headline TEXT NOT NULL DEFAULT '',
+    lat REAL NOT NULL DEFAULT 0.0,
+    lng REAL NOT NULL DEFAULT 0.0,
+    status TEXT NOT NULL DEFAULT 'AVAILABLE',
+    price_from INTEGER NOT NULL DEFAULT 0,
+    is_verified INTEGER NOT NULL DEFAULT 0,
+    coverage_radius_km REAL NOT NULL DEFAULT 10.0
+);
+
+selectAllProviders:
+SELECT * FROM service_providers ORDER BY rating DESC;
+
+providersByCategory:
+SELECT * FROM service_providers WHERE category = ? ORDER BY rating DESC;
+
+selectProviderById:
+SELECT * FROM service_providers WHERE id = ?;
+
+insertProvider:
+INSERT OR REPLACE INTO service_providers(id, name, emoji, category, rating, reviews_count, jobs_completed, experience_years, headline, lat, lng, status, price_from, is_verified, coverage_radius_km)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- ===== bookings (marketplace) =====
+CREATE TABLE IF NOT EXISTS marketplace_bookings (
+    id INTEGER PRIMARY KEY,
+    customer_id INTEGER NOT NULL,
+    provider_id INTEGER NOT NULL,
+    provider_name TEXT NOT NULL DEFAULT '',
+    provider_emoji TEXT NOT NULL DEFAULT '🔧',
+    service_type TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'SEARCHING',
+    location_text TEXT NOT NULL DEFAULT '',
+    lat REAL NOT NULL DEFAULT 0.0,
+    lng REAL NOT NULL DEFAULT 0.0,
+    scheduled_at INTEGER NOT NULL DEFAULT 0,
+    started_at INTEGER NOT NULL DEFAULT 0,
+    completed_at INTEGER NOT NULL DEFAULT 0,
+    base_cost INTEGER NOT NULL DEFAULT 0,
+    additional_cost INTEGER NOT NULL DEFAULT 0,
+    platform_fee INTEGER NOT NULL DEFAULT 0,
+    total_cost INTEGER NOT NULL DEFAULT 0,
+    payment_method TEXT NOT NULL DEFAULT '',
+    is_paid INTEGER NOT NULL DEFAULT 0,
+    created_at_epoch INTEGER NOT NULL DEFAULT 0
+);
+
+selectAllMarketplaceBookings:
+SELECT * FROM marketplace_bookings ORDER BY created_at_epoch DESC;
+
+selectMarketplaceBookingById:
+SELECT * FROM marketplace_bookings WHERE id = ?;
+
+insertMarketplaceBooking:
+INSERT INTO marketplace_bookings(id, customer_id, provider_id, provider_name, provider_emoji, service_type, description, status, location_text, lat, lng, scheduled_at, started_at, completed_at, base_cost, additional_cost, platform_fee, total_cost, payment_method, is_paid, created_at_epoch)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateBookingStatus:
+UPDATE marketplace_bookings SET status = ? WHERE id = ?;
+
+updateBookingPayment:
+UPDATE marketplace_bookings SET payment_method = ?, is_paid = 1 WHERE id = ?;
+
+updateBookingCost:
+UPDATE marketplace_bookings SET additional_cost = ?, total_cost = ? WHERE id = ?;
+
+marketplaceBookingCount:
+SELECT COUNT(*) FROM marketplace_bookings;
+
+-- ===== quotes =====
+CREATE TABLE IF NOT EXISTS quotes (
+    id INTEGER PRIMARY KEY,
+    booking_id INTEGER NOT NULL,
+    provider_id INTEGER NOT NULL,
+    provider_name TEXT NOT NULL DEFAULT '',
+    provider_emoji TEXT NOT NULL DEFAULT '🔧',
+    labour_cost INTEGER NOT NULL DEFAULT 0,
+    materials_cost INTEGER NOT NULL DEFAULT 0,
+    service_fee INTEGER NOT NULL DEFAULT 0,
+    total INTEGER NOT NULL DEFAULT 0,
+    estimated_duration TEXT NOT NULL DEFAULT '',
+    arrival_time TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'PENDING'
+);
+
+selectQuotesByBooking:
+SELECT * FROM quotes WHERE booking_id = ? ORDER BY total ASC;
+
+insertQuote:
+INSERT INTO quotes(id, booking_id, provider_id, provider_name, provider_emoji, labour_cost, materials_cost, service_fee, total, estimated_duration, arrival_time, status)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateQuoteStatus:
+UPDATE quotes SET status = ? WHERE id = ?;
+
+-- ===== reviews =====
+CREATE TABLE IF NOT EXISTS reviews (
+    id INTEGER PRIMARY KEY,
+    booking_id INTEGER NOT NULL,
+    provider_id INTEGER NOT NULL,
+    customer_id INTEGER NOT NULL DEFAULT 1,
+    quality INTEGER NOT NULL DEFAULT 5,
+    professionalism INTEGER NOT NULL DEFAULT 5,
+    timeliness INTEGER NOT NULL DEFAULT 5,
+    communication INTEGER NOT NULL DEFAULT 5,
+    value_rating INTEGER NOT NULL DEFAULT 5,
+    overall INTEGER NOT NULL DEFAULT 5,
+    comment TEXT NOT NULL DEFAULT '',
+    created_at_epoch INTEGER NOT NULL DEFAULT 0
+);
+
+selectReviewsByProvider:
+SELECT * FROM reviews WHERE provider_id = ? ORDER BY created_at_epoch DESC;
+
+insertReview:
+INSERT INTO reviews(id, booking_id, provider_id, customer_id, quality, professionalism, timeliness, communication, value_rating, overall, comment, created_at_epoch)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
