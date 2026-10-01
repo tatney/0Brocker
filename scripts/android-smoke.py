@@ -42,3 +42,42 @@ crash=adb('logcat','-d','-b','crash')
 (out/'crash-log.txt').write_text(crash)
 assert 'FATAL EXCEPTION' not in crash, 'Android app crashed'
 print('Actual APK installed, test account signed in, all five destinations opened without a crash.')
+
+# Exercise a real request and ensure both booking summaries use the same data.
+def click_label(label):
+    for attempt in range(7):
+        try:
+            tap(text_node(label)); return
+        except AssertionError:
+            adb('shell','input','swipe','540','1450','540','600','400');time.sleep(1)
+    screenshot('missing-control')
+    raise AssertionError('Control not reachable: '+label)
+
+tap(text_node('Services'));click_label('Joseph Plumbing');click_label('Request Service')
+fields=[n for n in dump().iter('node') if n.attrib.get('class')=='android.widget.EditText']
+tap(fields[0]);adb('shell','input','text','Kitchen%stap%sleak');adb('shell','input','keyevent','4')
+click_label('Review request');time.sleep(2);screenshot('07-request-summary')
+summary=ET.tostring(dump(),encoding='unicode')
+assert '35,000' in summary and 'Brokerage fee' in summary, 'Selected-provider price breakdown is missing'
+for _ in range(3): adb('shell','input','keyevent','4');time.sleep(1)
+tap(text_node('My home'));click_label('My bookings');time.sleep(1);screenshot('08-current-bookings')
+assert 'Plumbing' in ET.tostring(dump(),encoding='unicode'), 'New request missing from current booking history'
+adb('shell','input','keyevent','4');time.sleep(1);tap(text_node('Profile'));screenshot('09-profile-bookings')
+assert 'Plumbing' in ET.tostring(dump(),encoding='unicode'), 'New request missing from profile'
+
+# Persist a resident note and check it after an actual process restart.
+tap(text_node('My home'))
+fields=[n for n in dump().iter('node') if n.attrib.get('class')=='android.widget.EditText']
+tap(fields[0]);adb('shell','input','text','Kitchen%stap');adb('shell','input','keyevent','4')
+click_label('Save note');time.sleep(1)
+adb('shell','am','force-stop','com.homeapp')
+adb('shell','am','start','-W','-n','com.homeapp/com.homeapp.MainActivity');time.sleep(5)
+tap(text_node('My home'))
+for _ in range(4):
+    if 'Kitchen tap' in ET.tostring(dump(),encoding='unicode'): break
+    adb('shell','input','swipe','540','1450','540','700','400');time.sleep(1)
+screenshot('10-persisted-home-note')
+assert 'Kitchen tap' in ET.tostring(dump(),encoding='unicode'), 'Resident note did not survive restart'
+crash=adb('logcat','-d','-b','crash');(out/'crash-log.txt').write_text(crash)
+assert 'FATAL EXCEPTION' not in crash, 'Android app crashed during a request or resident note'
+print('Provider request, accurate prices, both booking summaries and resident-note persistence passed on Android.')
