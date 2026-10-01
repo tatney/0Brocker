@@ -289,7 +289,7 @@ private fun QuickActionsRow(
                 icon = IconSparkle,
                 iconSize = 20.dp,
                 title = "New Listings",
-                subtitle = "Verified properties",
+                subtitle = "Browse sample properties",
                 gradient = Brush.linearGradient(listOf(Color(0xFF565E69), Color(0xFF737D88))),
                 onClick = onNewListings,
             )
@@ -385,7 +385,7 @@ private fun HomeServicesSection(
     Column {
         SectionHeader(
             title = "Home Services",
-            subtitle = "Verified pros, doorstep service",
+            subtitle = "Choose a provider directly",
             actionLabel = "Open map",
             onAction = onBannerClick,
             actionIcon = IconMap,

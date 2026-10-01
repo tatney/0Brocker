@@ -36,6 +36,8 @@ class ServicePaymentViewModel(savedStateHandle: SavedStateHandle) : ViewModel() 
     fun selectMethod(method: String) = _uiState.update { it.copy(selectedMethod = method) }
 
     fun pay(onDone: () -> Unit) {
+        val b = _booking.value ?: return
+        if (b.isPaid || _uiState.value.isBusy || b.status != com.homeapp.data.model.BookingStatus.COMPLETED) return
         _uiState.update { it.copy(isBusy = true) }
         viewModelScope.launch {
             delay(1500)

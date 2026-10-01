@@ -347,7 +347,7 @@ private fun LandlordCard(property: Property) {
                 Spacer(Modifier.width(kSpaceSM))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        text = if (property.isRent()) "Landlord" else "Agent",
+                        text = property.ownerName.ifBlank { "Property owner" },
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,

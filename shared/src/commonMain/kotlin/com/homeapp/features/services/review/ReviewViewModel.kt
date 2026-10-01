@@ -53,27 +53,33 @@ class ReviewViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
 
     fun submit(onDone: () -> Unit) {
         val state = _uiState.value
-        if (state.overallRating == 0) return
+        if (state.overallRating == 0 || state.isBusy || state.isSubmitted) return
         _uiState.update { it.copy(isBusy = true) }
         viewModelScope.launch {
             val pid = _providerId.value
-            val customerId = (AppContainer.authRepository.observeSession().first() as? AuthState.SignedIn)?.user?.id ?: 1L
+            val customerId = (AppContainer.authRepository.observeSession().first() as? AuthState.SignedIn)?.user?.id
+                ?: run { _uiState.update { it.copy(isBusy = false) }; return@launch }
+            val booking = AppContainer.marketplaceRepository.observeBookingById(bookingId).first()
+            if (booking == null || booking.customerId != customerId || !booking.isPaid || booking.status == com.homeapp.data.model.BookingStatus.REVIEWED) {
+                _uiState.update { it.copy(isBusy = false) }; return@launch
+            }
             AppContainer.marketplaceRepository.insertReview(
                 Review(
                     id = kotlin.random.Random.nextLong(1_000_000, 9_999_999),
                     bookingId = bookingId,
                     providerId = pid,
                     customerId = customerId,
-                    quality = state.categoryRatings.getOrElse(0) { 5 },
-                    professionalism = state.categoryRatings.getOrElse(1) { 5 },
-                    timeliness = state.categoryRatings.getOrElse(2) { 5 },
-                    communication = state.categoryRatings.getOrElse(3) { 5 },
-                    valueRating = state.categoryRatings.getOrElse(4) { 5 },
+                    quality = state.categoryRatings.getOrElse(0) { 0 }.takeIf { it > 0 } ?: state.overallRating,
+                    professionalism = state.categoryRatings.getOrElse(1) { 0 }.takeIf { it > 0 } ?: state.overallRating,
+                    timeliness = state.categoryRatings.getOrElse(2) { 0 }.takeIf { it > 0 } ?: state.overallRating,
+                    communication = state.categoryRatings.getOrElse(3) { 0 }.takeIf { it > 0 } ?: state.overallRating,
+                    valueRating = state.categoryRatings.getOrElse(4) { 0 }.takeIf { it > 0 } ?: state.overallRating,
                     overall = state.overallRating,
                     comment = state.comment,
                     createdAtEpoch = currentTimeEpochSeconds(),
                 )
             )
+            AppContainer.marketplaceRepository.updateBookingStatus(bookingId, com.homeapp.data.model.BookingStatus.REVIEWED)
             _uiState.update { it.copy(isBusy = false, isSubmitted = true) }
             onDone()
         }

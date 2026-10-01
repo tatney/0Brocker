@@ -86,7 +86,7 @@ function Workspace() {
         <div className={`conn conn-${(isSupabaseConfigured && !isTestWorkspace()) ? 'live' : 'demo'}`}>
           <Activity size={13} aria-hidden="true" />
           <span>
-            {isSupabaseConfigured ? `Live · ${projectRef}` : 'Test workspace � sample data'}
+            {isSupabaseConfigured ? `Live · ${projectRef}` : (isTestWorkspace() ? 'Test workspace � sample data' : 'Demo mode')}
           </span>
         </div>
       </aside>

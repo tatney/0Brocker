@@ -28,10 +28,10 @@ class V1PersistenceTest {
         val db=db();val repo=MarketplaceRepositoryImpl(db)
         val id=repo.createBooking(Booking(0,1,1,serviceType="Repair",baseCost=500,platformFee=0,totalCost=500))
         repo.selectPaymentMethod(id,"Cash")
-        val row=db.homeAppDatabaseQueries.selectBookingById(id).executeAsOne()
+        val row=db.homeAppDatabaseQueries.selectMarketplaceBookingById(id).executeAsOne()
         assertEquals("Cash",row.payment_method);assertEquals(0L,row.is_paid)
         repo.updateBookingPayment(id,"Cash")
-        assertEquals(1L,db.homeAppDatabaseQueries.selectBookingById(id).executeAsOne().is_paid)
+        assertEquals(1L,db.homeAppDatabaseQueries.selectMarketplaceBookingById(id).executeAsOne().is_paid)
     }
     @Test fun residentNotesAndSavedSearchesAreScopedToUser() {
         val db=db();val q=db.homeAppDatabaseQueries
