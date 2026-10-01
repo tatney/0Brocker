@@ -3,7 +3,7 @@ export default defineConfig({
   testDir:'./e2e', fullyParallel:true, workers:4,
   reporter:process.env.CI?'dot':'list',
   use:{baseURL:'http://127.0.0.1:4183',trace:'on-first-retry'},
-  projects:[{name:'chromium',use:{...devices['Desktop Chrome']}}],
+  projects:[{name:'chromium',use:{...devices['Desktop Chrome'],channel:process.env.CI?'chrome':undefined}}],
   webServer:{
     command:'vite build --mode test --outDir dist-test && vite preview --host 127.0.0.1 --outDir dist-test --port 4183 --strictPort',
     url:'http://127.0.0.1:4183', reuseExistingServer:false,timeout:120000,

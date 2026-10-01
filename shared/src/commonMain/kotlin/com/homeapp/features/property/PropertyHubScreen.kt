@@ -147,37 +147,10 @@ fun PropertyHubScreen(
             }
         }
         item {
-            QuickActionsRow(
-                modifier = Modifier.height(224.dp),
-                onSearchProperty = viewModel::clearFilters,
-                onPostProperty = onPostProperty,
-                onNewListings = { viewModel.clearFilters(); viewModel.onSearchQueryChange("") },
-            )
-        }
-        item {
-            HomeServicesSection(
-                onBannerClick = onHomeServices,
-                onCategoryClick = onServiceCategoryClick,
-            )
-        }
-        item {
-            PackersMoversCard(onClick = onPackersMovers)
-        }
-        item {
-            SectionHeader(
-                title = "Explore Property",
-                subtitle = "Rent · Buy · Sale — Kampala",
-                actionLabel = "Saved",
-                onAction = onSavedClick,
-            )
-        }
-        item {
-            FilterChips(
-                filter = filter,
-                onListingType = { viewModel.onListingTypeChange(it) },
-                onAssetType = { viewModel.onAssetTypeChange(it) },
-                onCategory = { viewModel.onCategoryChange(it) },
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(kSpaceSM)) {
+                TextButton(onClick = onPostProperty) { Text("Post as owner") }
+                TextButton(onClick = onSavedClick) { Text("Saved listings") }
+            }
         }
         item {
             SectionHeader(
@@ -204,7 +177,7 @@ private fun HeroHeader() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(156.dp)
+            .height(120.dp)
             .clip(kRadiusXL)
             .background(
                 Brush.linearGradient(

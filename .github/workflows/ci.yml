@@ -36,9 +36,7 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
+      # Ubuntu runner includes Chrome; avoid flaky browser-download CDN requests.
       - name: End-to-end tests
         run: npx playwright test
 

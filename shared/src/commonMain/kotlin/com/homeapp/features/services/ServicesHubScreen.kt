@@ -184,11 +184,11 @@ fun ServicesHubScreen(
 
         item {
             SectionHeader(
-                title = "Top rated professionals",
+                title = "Popular providers",
                 // This used to be a "More" action wired to an empty lambda. It is
                 // now the entry point to My Bookings, which the old tab layout
                 // reached through a dedicated tab.
-                actionLabel = "My Bookings",
+                actionLabel = "Bookings",
                 actionIcon = IconCalendar,
                 onAction = onMyBookings,
                 modifier = Modifier.padding(horizontal = AppSpacing.gutter),

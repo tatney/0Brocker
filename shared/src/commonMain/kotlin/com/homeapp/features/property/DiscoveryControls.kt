@@ -24,6 +24,7 @@ fun DiscoveryControls(vm: PropertyViewModel) {
     val filter by vm.filter.collectAsState()
     val query by vm.searchQuery.collectAsState()
     var saved by remember { mutableStateOf<List<Saved_searches>>(emptyList()) }
+    var expanded by remember { mutableStateOf(false) }
     var userId by remember { mutableStateOf(0L) }
     val scope = rememberCoroutineScope()
     val q = DatabaseProvider.database.homeAppDatabaseQueries
@@ -32,7 +33,22 @@ fun DiscoveryControls(vm: PropertyViewModel) {
         q.selectSavedSearches(userId).asFlow().mapToList(Dispatchers.Default).collect { saved = it }
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Find your fit", style = MaterialTheme.typography.titleMedium)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(selected = filter.listingType == "RENT", onClick = { vm.onListingTypeChange("RENT") }, label = { Text("Rent") })
+            FilterChip(selected = filter.listingType == "BUY", onClick = { vm.onListingTypeChange("BUY") }, label = { Text("Buy") })
+            TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Hide filters" else "Filters & saved") }
+        }
+        if (expanded) {
+        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("House" to "HOUSE", "Land" to "LAND", "Car" to "CAR").forEach { (label,value) ->
+                FilterChip(selected = filter.assetType == value, onClick = { vm.onAssetTypeChange(value) }, label = { Text(label) })
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("Residential" to "RESIDENTIAL", "Commercial" to "COMMERCIAL").forEach { (label,value) ->
+                FilterChip(selected = filter.category == value, onClick = { vm.onCategoryChange(value) }, label = { Text(label) })
+            }
+        }
         OutlinedTextField(value = filter.maxPrice?.toString() ?: "", onValueChange = { vm.onBudgetChange(it.filter(Char::isDigit).take(13)) },
             label = { Text("Maximum asking price (UGX)") }, supportingText = { Text("Compare like periods: monthly rent and sale totals differ.") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
         Row { Checkbox(checked = filter.verifiedOnly, onCheckedChange = vm::onVerifiedChange)
@@ -55,6 +71,7 @@ fun DiscoveryControls(vm: PropertyViewModel) {
                     TextButton(onClick = { scope.launch { q.deleteSavedSearch(s.id, userId) } }) { Text("Delete") }
                 }
             }
+        }
         }
     }
 }
