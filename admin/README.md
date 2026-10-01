@@ -54,3 +54,9 @@ node scripts/deploy.mjs
 ```
 
 Once linked and configured, redeploy using `npm run deploy`. The deployed production URL is recorded in `deployment.json`. `.env` files, test artifacts and local previews are excluded from upload. Security headers and CSP are defined in `vercel.json`.
+
+## V1 test workspace
+
+Production includes a separate Test workspace sign-in for review. The server verifies TEST_ADMIN_EMAIL and TEST_ADMIN_PASSWORD_SHA256 and signs an eight-hour, HttpOnly, Secure, SameSite=Strict cookie with TEST_ADMIN_SESSION_SECRET. These are server-only Vercel variables. Test access never grants a Supabase admin role; all test edits use browser-local sample patches. The APK has a separate offline dataset. Test passwords are supplied with the release, not published in this repository.
+
+The verified APK, checksum, benchmark and testing guide are served from /downloads/. APK binaries are ignored by Git and uploaded from the successful CI artifact. See ../docs/V1-RELEASE.json for the exact source commit and acceptance evidence.

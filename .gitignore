@@ -36,3 +36,6 @@ supabase/.temp/
 
 # Local release tooling and test secrets
 .scratch/
+
+# APK binaries are delivered through CI and Vercel, not source control
+admin/public/downloads/*.apk
