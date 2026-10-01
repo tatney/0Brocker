@@ -99,7 +99,7 @@ fun AppShell(
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
-            Text("V1 testing � sample data � stored on this device", style = MaterialTheme.typography.labelSmall, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp))
+            Text("V1 testing - sample data - stored on this device", style = MaterialTheme.typography.labelSmall, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp))
             Box(
                 Modifier
                     .fillMaxWidth()

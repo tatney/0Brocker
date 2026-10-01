@@ -353,7 +353,7 @@ private fun LandlordCard(property: Property) {
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        text = "Direct contact � no intermediary",
+                        text = "Direct contact - no intermediary",
                         style = MaterialTheme.typography.labelSmall,
                         color = kTextSecondary,
                     )

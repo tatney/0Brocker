@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 on:
   push:
@@ -81,9 +81,16 @@ jobs:
       - name: Assemble Android debug APK
         run: ./gradlew :androidApp:assembleDebug
 
+      - name: Verify APK identity and signature
+        run: |
+          tools="$ANDROID_HOME/build-tools/36.0.0"
+          "$tools/aapt" dump badging androidApp/build/outputs/apk/debug/androidApp-debug.apk | head -1
+          "$tools/apksigner" verify --verbose androidApp/build/outputs/apk/debug/androidApp-debug.apk
+
       - uses: actions/upload-artifact@v4
         with:
           name: 0broker-debug-apk
           path: androidApp/build/outputs/apk/debug/*.apk
           retention-days: 14
           if-no-files-found: warn
+

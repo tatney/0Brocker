@@ -86,13 +86,13 @@ function Workspace() {
         <div className={`conn conn-${(isSupabaseConfigured && !isTestWorkspace()) ? 'live' : 'demo'}`}>
           <Activity size={13} aria-hidden="true" />
           <span>
-            {isSupabaseConfigured ? `Live · ${projectRef}` : (isTestWorkspace() ? 'Test workspace � sample data' : 'Demo mode')}
+            {(isSupabaseConfigured && !isTestWorkspace()) ? `Live · ${projectRef}` : (isTestWorkspace() ? 'Test workspace - sample data' : 'Demo mode')}
           </span>
         </div>
       </aside>
 
       <main className="main">
-        <Page source={isSupabaseConfigured ? 'live' : 'demo'} onNavigate={navigate} />
+        <Page source={(isSupabaseConfigured && !isTestWorkspace()) ? 'live' : 'demo'} onNavigate={navigate} />
       </main>
     </div>
   );

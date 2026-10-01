@@ -51,7 +51,7 @@ fun DiscoveryControls(vm: PropertyViewModel) {
                 Row(Modifier.fillMaxWidth()) {
                     TextButton(modifier = Modifier.weight(1f), onClick = {
                         vm.applySearch(s.query, PropertyFilter(s.listing_type, s.asset_type, s.category, s.max_price, s.verified_only == 1L, s.sort))
-                    }) { Text(s.query.ifBlank { "All locations" } + " � " + (s.listing_type ?: "rent / buy") + " � " + (s.max_price?.toString() ?: "any budget")) }
+                    }) { Text(s.query.ifBlank { "All locations" } + " - " + (s.listing_type ?: "rent / buy") + " - " + (s.max_price?.toString() ?: "any budget")) }
                     TextButton(onClick = { scope.launch { q.deleteSavedSearch(s.id, userId) } }) { Text("Delete") }
                 }
             }
@@ -65,8 +65,8 @@ fun PropertyComparison(rows: List<Property>, onDismiss: () -> Unit) {
         text = { Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             rows.forEach { p -> Column {
                 Text(p.title, style = MaterialTheme.typography.titleSmall)
-                Text(p.formatPrice() + " � " + p.priceUnitLabel())
-                Text(p.city + " � " + p.assetType.lowercase() + " � " + p.category.lowercase())
+                Text(p.formatPrice() + " - " + p.priceUnitLabel())
+                Text(p.city + " - " + p.assetType.lowercase() + " - " + p.category.lowercase())
                 if (p.assetType == "HOUSE") Text(p.bedrooms)
                 Text(if (p.ownerDeclared) "Owner declared; verification pending" else "Sample listing")
                 Text("Brokerage: UGX 0")

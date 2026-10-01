@@ -36,7 +36,7 @@ internal class ChatRepositoryImpl(
     override suspend fun openOwnerConversation(propertyId: Long, userId: Long, ownerName: String): Long {
         val id = 1_000_000_000L + userId * 1_000_000L + propertyId
         if (q.selectConversationById(id).executeAsOneOrNull() == null) {
-            q.insertConversation(id, ownerName.ifBlank { "Owner" } + " � listing #" + propertyId, "OWNER", "Test conversation; messages stay on this device", currentTimeEpochSeconds(), 0)
+            q.insertConversation(id, ownerName.ifBlank { "Owner" } + " - listing #" + propertyId, "OWNER", "Test conversation; messages stay on this device", currentTimeEpochSeconds(), 0)
         }
         return id
     }

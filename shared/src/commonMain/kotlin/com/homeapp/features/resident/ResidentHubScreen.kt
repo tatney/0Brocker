@@ -33,7 +33,7 @@ fun ResidentHubScreen(onServices: () -> Unit, onBookings: () -> Unit, onPayments
     LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item { Text("My home", style = MaterialTheme.typography.headlineMedium)
             Text("Keep the essentials in one place.", style = MaterialTheme.typography.bodyMedium)
-            Text("V1 test workspace � notes stay on this device. Rent entries are reminders, not invoices or payments.", style = MaterialTheme.typography.bodySmall) }
+            Text("V1 test workspace - notes stay on this device. Rent entries are reminders, not invoices or payments.", style = MaterialTheme.typography.bodySmall) }
         item { Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TextButton(onClick = onServices) { Text("Find a provider") }
             TextButton(onClick = onBookings) { Text("My bookings") }
@@ -54,7 +54,7 @@ fun ResidentHubScreen(onServices: () -> Unit, onBookings: () -> Unit, onPayments
         if (notes.isEmpty()) item { Text("No notes yet. Add a repair, rent reminder or move-in checklist item.") }
         items(notes, key = { it.id }) { n ->
             OutlinedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp)) {
-                Text(n.kind + if (n.done == 1L) " � Done" else " � Open", style = MaterialTheme.typography.labelMedium)
+                Text(n.kind + if (n.done == 1L) " - Done" else " - Open", style = MaterialTheme.typography.labelMedium)
                 Text(n.title, style = MaterialTheme.typography.titleMedium)
                 Text(n.detail)
                 TextButton(onClick = { scope.launch { q.completeResidentNote(if (n.done == 1L) 0L else 1L, n.id, userId) } }) {

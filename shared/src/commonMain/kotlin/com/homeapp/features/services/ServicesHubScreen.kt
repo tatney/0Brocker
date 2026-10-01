@@ -97,7 +97,7 @@ fun ServicesHubScreen(
         item {
             AppTopBar(
                 title = "Home Services",
-                subtitle = "Direct providers � sample profiles",
+                subtitle = "Direct providers - sample profiles",
             )
         }
 

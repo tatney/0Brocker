@@ -14,9 +14,9 @@ export function AdminGate({children}) {
     return ()=>{mounted=false;subscription.unsubscribe();};
   },[]);
   if(!isSupabaseConfigured)return children;
-  if(loading)return <div className="auth-screen"><div className="spinner" role="status">Checking your session�</div></div>;
+  if(loading)return <div className="auth-screen"><div className="spinner" role="status">Checking your session-</div></div>;
   async function logout(){if(testing){await fetch('/api/test-session',{method:'DELETE'});setTestWorkspace(false);setTesting(false);}else await supabase.auth.signOut();}
-  if(testing||user?.app_metadata?.role==='admin')return <>{testing&&<div className="test-workspace-banner">V1 TEST WORKSPACE � Sample data � Changes stay in this browser � No connection to the APK</div>}{children}<button className="signout" onClick={logout}><LogOut size={14}/> Sign out</button></>;
+  if(testing||user?.app_metadata?.role==='admin')return <>{testing&&<div className="test-workspace-banner">V1 TEST WORKSPACE - Sample data - Changes stay in this browser - No connection to the APK</div>}{children}<button className="signout" onClick={logout}><LogOut size={14}/> Sign out</button></>;
   async function login(event){event.preventDefault();setBusy(true);setError('');try{
     if(mode==='test'){
       const res=await fetch('/api/test-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
@@ -35,7 +35,7 @@ export function AdminGate({children}) {
         <label>Email address<input type="email" autoComplete="username" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com"/></label>
         <label>Password<input type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)}/></label>
         {error&&<div role="alert" className="banner banner-danger">{error}</div>}
-        <button className="btn btn-primary" disabled={busy}>{busy?'Signing in�':'Sign in'} <ShieldCheck size={16}/></button>
+        <button className="btn btn-primary" disabled={busy}>{busy?'Signing in-':'Sign in'} <ShieldCheck size={16}/></button>
       </form></>}
     <div className="auth-foot"><ShieldCheck size={14}/> {mode==='test'?'V1 testing access':'Administrator accounts only'}</div>
   </section></main>;
