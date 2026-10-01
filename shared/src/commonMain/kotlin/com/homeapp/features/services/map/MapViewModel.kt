@@ -63,7 +63,7 @@ class MapViewModel : ViewModel() {
                     provider.name.contains(state.searchQuery, ignoreCase = true) ||
                     provider.category.contains(state.searchQuery, ignoreCase = true) ||
                     provider.headline.contains(state.searchQuery, ignoreCase = true)
-                matchesCategory && matchesSearch && (!state.availableOnly || provider.status == "AVAILABLE")
+                matchesCategory && matchesSearch && (!state.availableOnly || provider.status == com.homeapp.data.model.ProviderStatus.AVAILABLE)
             }
             when (state.sortBy) {
                 SortOption.NEAREST -> filtered.sortedBy { it.distanceKm }
