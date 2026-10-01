@@ -74,7 +74,7 @@ fun AppNavHost() {
                 onHomeServices = { navController.navigate(Routes.HOME_SERVICES_MAP_ALL) },
                 onMyBookings = { navController.navigate(Routes.MY_BOOKINGS) },
                 onPostProperty = { navController.navigate(Routes.POST_PROPERTY) },
-                onPackersMovers = { navController.navigate(Routes.requestServiceSearch("Packers & Movers")) },
+                onPackersMovers = { navController.navigate(Routes.homeServicesMap(ServiceCategory.MOVING.name)) },
                 onOpenThread = { conversationId -> navController.navigate(Routes.chatThread(conversationId)) },
                 onSignOut = {
                     scope.launch {
@@ -157,7 +157,7 @@ fun AppNavHost() {
             ChatThreadScreen(onBack = { navController.navigateUp() })
         }
 
-        // ─── Home Services Marketplace ───
+        // â”€â”€â”€ Home Services Marketplace â”€â”€â”€
         composable(
             route = Routes.HOME_SERVICES_MAP,
             arguments = listOf(
