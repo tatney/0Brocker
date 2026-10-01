@@ -69,8 +69,6 @@ jobs:
           accept-android-sdk-licenses: true
 
       - uses: gradle/actions/wrapper-validation@v3
-        with:
-          distribution-type: all
 
       - name: Run JVM tests
         run: ./gradlew :shared:jvmTest --stacktrace
