@@ -19,8 +19,10 @@ import { Properties } from './pages/Properties.jsx';
 import { People } from './pages/People.jsx';
 import { Money } from './pages/Money.jsx';
 import { Reviews } from './pages/Reviews.jsx';
+import { Verification } from './pages/Verification.jsx';
 
 const NAV = [
+  { id: 'verification', label: 'Verification', icon: Star, component: Verification },
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, component: Overview },
   { id: 'bookings', label: 'Bookings', icon: Wrench, component: Bookings },
   { id: 'providers', label: 'Providers', icon: Star, component: Providers },

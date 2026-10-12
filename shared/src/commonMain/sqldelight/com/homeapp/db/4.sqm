@@ -1,0 +1,16 @@
+CREATE TABLE verification_applications (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    jurisdiction TEXT NOT NULL,
+    credential_number TEXT NOT NULL DEFAULT '',
+    issuer TEXT NOT NULL DEFAULT '',
+    expires_on TEXT NOT NULL DEFAULT '',
+    unit_number TEXT NOT NULL DEFAULT '',
+    relationship TEXT NOT NULL DEFAULT 'individual_owner',
+    payload TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    extraction_summary TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL
+);

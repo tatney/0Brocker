@@ -82,13 +82,22 @@ test('advances bookings using the app workflow and persists the demo change', as
   expect(page.errors).toEqual([]);
 });
 
-test('verifies a demo listing and keeps the result on reload', async ({ page }) => {
-  await page.getByRole('button', { name: 'Listings', exact: true }).click();
+test('listing review opens evidence centre and records reasoned audit history', async ({page})=>{
+  await page.getByRole('button',{name:'Listings',exact:true}).click();
   const row=page.locator('.table tbody tr').filter({hasText:'Portion for Rent'});
-  await row.getByRole('button',{name:'Verify',exact:true}).click();
-  await expect(row).toContainText('Verified');
+  await row.getByRole('link',{name:'Review evidence'}).click();
+  await expect(page.locator('h1')).toHaveText('Verification centre');
+  const provider=page.locator('section.panel').filter({has:page.getByRole('heading',{name:'PLUMBING',exact:true})});
+  await expect(provider.getByRole('button',{name:'approve',exact:true})).toBeDisabled();
+  await page.getByLabel('Reviewer decision reason').fill('Simulated issuer and identity checks reviewed');
+  await provider.getByRole('button',{name:'approve',exact:true}).click();
+  await provider.getByText('Audit history (1)').click();
+  await expect(provider).toContainText('Simulated issuer and identity checks reviewed');
   await page.reload();
-  await expect(page.locator('.table tbody tr').filter({hasText:'Portion for Rent'})).toContainText('Verified');
+  await expect(provider).toContainText('approved');
+  const broker=page.locator('section.panel').filter({hasText:'demo-broker'});
+  await expect(broker.getByRole('button',{name:'approve',exact:true})).toBeDisabled();
+  expect(page.errors).toEqual([]);
 });
 
 test('exports only filtered listing records', async ({ page }) => {

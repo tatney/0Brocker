@@ -48,6 +48,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.homeapp.core.icons.IconArrowForward
 import com.homeapp.core.icons.IconBack
 import com.homeapp.core.icons.IconList
+import com.homeapp.core.icons.IconHome
+import com.homeapp.core.icons.IconWrench
+import com.homeapp.core.icons.IconCreditCard
+import com.homeapp.core.widgets.AppBottomBarItem
+import com.homeapp.features.shell.StorefrontBottomBar
 import com.homeapp.core.icons.IconMap
 import com.homeapp.core.model.categoryIcon
 import com.homeapp.core.icons.IconSearch
@@ -100,10 +105,13 @@ fun ServiceMapScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     initialCategory: ServiceCategory? = null,
+    onNavigateMain: (String) -> Unit = { onBack() },
     viewModel: MapViewModel = viewModel { MapViewModel() },
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val providers by viewModel.providers.collectAsState()
+    val userLocation by viewModel.userLocation.collectAsState()
+    val locationNotice by UserLocation.status.collectAsState()
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
 
@@ -112,7 +120,8 @@ fun ServiceMapScreen(
         if (initialCategory != null) viewModel.onCategorySelect(initialCategory)
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize()) {
+    Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
         if (uiState.isMapView) {
             ServiceMapCanvas(
                 providers = providers,
@@ -120,7 +129,7 @@ fun ServiceMapScreen(
                 onProviderMarkerClick = { viewModel.onProviderSelect(it) },
                 modifier = Modifier.fillMaxSize(),
                 // Was never passed before, so the location dot could not render.
-                userLocation = viewModel.userLocation,
+                userLocation = userLocation,
             )
         } else {
             BrowseProviderList(
@@ -134,6 +143,7 @@ fun ServiceMapScreen(
         }
 
         ExploreHeader(
+            locationNotice = if (userLocation == null) "$locationNotice Map preview: Kampala; this is not your location." else locationNotice,
             searchQuery = uiState.searchQuery,
             onSearchQueryChange = viewModel::onSearchQueryChange,
             selectedCategory = uiState.selectedCategory,
@@ -155,7 +165,9 @@ fun ServiceMapScreen(
             shadowElevation = 4.dp,
         ) {
             Text(
-                text = if (uiState.selectedCategory == ServiceCategory.ALL) {
+                text = if (providers.isEmpty()) {
+                    "No eligible match. Cloud checks are not connected."
+                } else if (uiState.selectedCategory == ServiceCategory.ALL) {
                     "${providers.size} providers nearby"
                 } else {
                     "${providers.size} ${uiState.selectedCategory.label} providers"
@@ -165,6 +177,14 @@ fun ServiceMapScreen(
                 modifier = Modifier.padding(horizontal = kSpaceMD, vertical = kSpaceSM),
             )
         }
+    }
+
+    StorefrontBottomBar(listOf(
+        AppBottomBarItem("0Brocker", IconHome, false) { onNavigateMain("HOME") },
+        AppBottomBarItem("Property", IconHome, false) { onNavigateMain("PROPERTY") },
+        AppBottomBarItem("Services", IconWrench, true) { onNavigateMain("SERVICES") },
+        AppBottomBarItem("Payments", IconCreditCard, false) { onNavigateMain("PAYMENTS") },
+    ))
     }
 
     // Marker / row tap selects the provider and shows the preview sheet; the
@@ -193,6 +213,7 @@ fun ServiceMapScreen(
 /** Back button, Map/Browse toggle, search field and category filter. */
 @Composable
 private fun ExploreHeader(
+    locationNotice: String,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     selectedCategory: ServiceCategory,
@@ -237,9 +258,9 @@ private fun ExploreHeader(
 
         Spacer(Modifier.height(AppSpacing.item))
 
-        Text("Sample locations; distances use Kampala centre, not GPS.", style = MaterialTheme.typography.labelSmall, color = kTextSecondary)
+        Text(locationNotice, style = MaterialTheme.typography.labelSmall, color = kTextSecondary)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            FilterChip(selected = availableOnly, onClick = { onAvailable(!availableOnly) }, label = { Text("Available only") })
+            TextButton(onClick = { UserLocation.request() }) { Text("Use my location") }
             Box {
                 TextButton(onClick = { sortOpen = true }) { Text(sort.label) }
                 DropdownMenu(expanded = sortOpen, onDismissRequest = { sortOpen = false }) {
@@ -306,8 +327,8 @@ private fun BrowseProviderList(
     if (providers.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             EmptyState(
-                title = "No providers found",
-                subtitle = "Try a different category or clear your search.",
+                title = "No eligible providers",
+                subtitle = "Share your location. Only available, independently qualified technicians in your service area can match. Cloud qualification sync is not connected in this preview.",
                 icon = IconSearch,
             )
         }
@@ -527,7 +548,7 @@ fun ProviderPreviewSheet(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
-                Text("Starting price", style = MaterialTheme.typography.labelMedium, color = kTextSecondary)
+                Text("Diagnostic visit fee", style = MaterialTheme.typography.labelMedium, color = kTextSecondary)
                 Text(
                     text = provider.formatPrice(),
                     style = MaterialTheme.typography.titleLarge,
@@ -540,6 +561,8 @@ fun ProviderPreviewSheet(
 
         Spacer(Modifier.height(kSpaceMD))
 
+        Text("Repair labour, parts and materials are excluded. Approve a separate repair quote before work begins.", style = MaterialTheme.typography.bodySmall)
+        Spacer(Modifier.height(kSpaceSM))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(kSpaceSM),

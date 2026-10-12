@@ -20,7 +20,7 @@ data class MapUiState(
     val selectedProvider: ServiceProvider? = null,
     val isMapView: Boolean = true,
     val sortBy: SortOption = SortOption.RECOMMENDED,
-    val availableOnly: Boolean = false,
+    val availableOnly: Boolean = true,
 )
 
 enum class SortOption(val label: String) {
@@ -33,16 +33,7 @@ enum class SortOption(val label: String) {
 
 class MapViewModel : ViewModel() {
 
-    // User's assumed reference location (Kampala city centre)
-    private val userLat = 0.3476
-    private val userLng = 32.5825
-
-    /**
-     * The user's own position, so the map can show it and frame the results
-     * around it. Previously the map canvas accepted a `userLocation` that
-     * nothing ever supplied, so the location dot was unreachable.
-     */
-    val userLocation: GeoPoint = GeoPoint(userLat, userLng)
+    val userLocation = UserLocation.point
 
     private val _uiState = MutableStateFlow(MapUiState())
     val uiState: StateFlow<MapUiState> = _uiState.asStateFlow()
@@ -51,8 +42,9 @@ class MapViewModel : ViewModel() {
         combine(
             AppContainer.marketplaceRepository.observeAllProviders(),
             _uiState,
-        ) { allProviders, state ->
-            val enriched = allProviders.map { it.withDistanceFrom(userLat, userLng) }
+            userLocation,
+        ) { allProviders, state, location ->
+            val enriched = if (location == null) emptyList() else allProviders.map { it.withDistanceFrom(location.lat, location.lng) }
             val filtered = enriched.filter { provider ->
                 // Alias-based, not label equality: the database writes
                 // "Interior Design" / "Appliance Repair" where the enum says
@@ -63,14 +55,14 @@ class MapViewModel : ViewModel() {
                     provider.name.contains(state.searchQuery, ignoreCase = true) ||
                     provider.category.contains(state.searchQuery, ignoreCase = true) ||
                     provider.headline.contains(state.searchQuery, ignoreCase = true)
-                matchesCategory && matchesSearch && (!state.availableOnly || provider.status == com.homeapp.data.model.ProviderStatus.AVAILABLE)
+                matchesCategory && matchesSearch && provider.status == com.homeapp.data.model.ProviderStatus.AVAILABLE && provider.distanceKm <= provider.coverageRadiusKm && com.homeapp.features.verification.VerificationPolicy.eligible(provider, com.homeapp.core.time.currentTimeEpochSeconds())
             }
             when (state.sortBy) {
                 SortOption.NEAREST -> filtered.sortedBy { it.distanceKm }
-                SortOption.HIGHEST_RATED -> filtered.sortedByDescending { it.rating }
+                SortOption.HIGHEST_RATED -> filtered.sortedWith(compareByDescending<ServiceProvider> { com.homeapp.features.verification.VerificationPolicy.reliableRating(it) }.thenBy { it.etaMinutes })
                 SortOption.LOWEST_PRICE -> filtered.sortedBy { it.priceFrom }
                 SortOption.FASTEST -> filtered.sortedBy { it.etaMinutes }
-                SortOption.RECOMMENDED -> filtered.sortedByDescending { it.rating * it.jobsCompleted }
+                SortOption.RECOMMENDED -> filtered.sortedWith(compareByDescending<ServiceProvider> { com.homeapp.features.verification.VerificationPolicy.reliableRating(it) }.thenBy { it.etaMinutes })
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 

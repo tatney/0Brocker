@@ -61,12 +61,12 @@ import com.homeapp.data.model.ServiceProvider
  * The category affordance previously used a private `ServiceCategory` data class
  * that shadowed the real enum and carried only eight legacy-vocabulary entries,
  * so "Painting" was never offered at all. Categories now come straight from
- * [ServiceCategory] and render through [CategoryIconRail], which is a LazyRow —
+ * [ServiceCategory] and render through [CategoryIconRail], which is a LazyRow â€”
  * the old version nested fixed Rows inside a lazy item and could not scroll to
  * the categories that fell off the end.
  */
 @Composable
-fun ServicesHubScreen(
+fun ServicesExploreScreen(
     modifier: Modifier = Modifier,
     onCategoryClick: (ServiceCategory) -> Unit = {},
     onServiceClick: (Long) -> Unit = {},
@@ -83,7 +83,7 @@ fun ServicesHubScreen(
         ?: ServiceCategory.ALL
 
     // Tapping a category opens the marketplace explore route, which arrives
-    // already filtered — the selection is no longer discarded.
+    // already filtered â€” the selection is no longer discarded.
     val openCategory: (ServiceCategory) -> Unit = { category ->
         selected = category.name
         onCategoryClick(category)

@@ -40,6 +40,8 @@ class RequestServiceViewModel(savedStateHandle: SavedStateHandle) : ViewModel() 
         }
     }
 
+    fun acceptFee(value: Boolean) = _uiState.update { it.copy(feeAccepted = value) }
+
     fun updateDescription(value: String) = _uiState.update { it.copy(description = value.take(200)) }
     fun updateSubType(value: String) = _uiState.update { it.copy(serviceSubType = value) }
     fun updateLocation(value: String) = _uiState.update { it.copy(locationText = value.take(100)) }
@@ -56,14 +58,16 @@ class RequestServiceViewModel(savedStateHandle: SavedStateHandle) : ViewModel() 
         }
         val scheduled = runCatching { bookingSchedule(state.urgency, state.scheduledDate, state.scheduledTime, currentTimeEpochSeconds()) }
             .getOrElse { _uiState.update { it.copy(error = "Enter a valid future date (YYYY-MM-DD) and time (HH:mm), Kampala time") }; return }
-        if (_provider.value == null) { _uiState.update { it.copy(error = "Choose a provider before submitting") }; return }
+        if (_provider.value == null) { _uiState.update { it.copy(error = "No eligible technician. Independent qualification is required.") }; return }
+        if (!state.feeAccepted) { _uiState.update { it.copy(error = "Acknowledge the diagnostic fee and repair exclusions") }; return }
+        val location = com.homeapp.features.services.map.UserLocation.point.value ?: run { _uiState.update { it.copy(error = "Share your location before requesting a technician") }; return }
         _uiState.update { it.copy(isBusy = true, error = null) }
         val provider = _provider.value
         viewModelScope.launch {
             val now = currentTimeEpochSeconds()
             val customerId = (AppContainer.authRepository.observeSession().first() as? AuthState.SignedIn)?.user?.id
                 ?: run { _uiState.update { it.copy(isBusy = false, error = "Sign in to book a service") }; return@launch }
-            val bookingId = AppContainer.marketplaceRepository.createBooking(
+            val bookingId = runCatching { AppContainer.marketplaceRepository.createBooking(
                 Booking(
                     id = 0,
                     customerId = customerId,
@@ -74,8 +78,8 @@ class RequestServiceViewModel(savedStateHandle: SavedStateHandle) : ViewModel() 
                     description = state.description,
                     status = BookingStatus.PROVIDER_FOUND,
                     locationText = state.locationText,
-                    lat = 0.3476,
-                    lng = 32.5825,
+                    lat = location.lat,
+                    lng = location.lng,
                     baseCost = provider?.priceFrom ?: 0,
                     platformFee = 0,
                     totalCost = provider?.priceFrom ?: 0,
@@ -83,6 +87,7 @@ class RequestServiceViewModel(savedStateHandle: SavedStateHandle) : ViewModel() 
                     createdAtEpoch = now,
                 )
             )
+            }.getOrElse { failure -> _uiState.update { it.copy(isBusy = false, error = failure.message ?: "Booking blocked") }; return@launch }
             _uiState.update { it.copy(isBusy = false) }
             onCreated(bookingId)
         }

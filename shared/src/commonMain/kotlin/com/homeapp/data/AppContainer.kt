@@ -27,4 +27,5 @@ object AppContainer {
     val walletRepository: WalletRepository by lazy { WalletRepositoryImpl(db) }
     val chatRepository: ChatRepository by lazy { ChatRepositoryImpl(db) }
     val marketplaceRepository: MarketplaceRepository by lazy { MarketplaceRepositoryImpl(db) }
+    val verificationRepository by lazy { com.homeapp.data.repository.VerificationRepository(db) }
 }

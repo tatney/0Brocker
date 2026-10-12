@@ -106,7 +106,7 @@ data class PropertyFilterChip(
 )
 
 @Composable
-fun PropertyHubScreen(
+fun PropertyDiscoveryScreen(
     modifier: Modifier = Modifier,
     onPropertyClick: (Long) -> Unit = {},
     onSavedClick: () -> Unit = {},

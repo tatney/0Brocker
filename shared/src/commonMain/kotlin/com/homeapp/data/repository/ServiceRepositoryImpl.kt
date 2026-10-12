@@ -20,17 +20,17 @@ internal class ServiceRepositoryImpl(
 
     override fun observeAllProfessionals(): Flow<List<ServiceProfessional>> =
         queries.selectAllProfessionals().asFlow().mapToList(Dispatchers.Default).map { rows ->
-            rows.map { it.toDomain() }
+            emptyList<ServiceProfessional>()
         }
 
     override fun observeByCategory(category: String): Flow<List<ServiceProfessional>> =
         queries.professionalsByCategory(category).asFlow().mapToList(Dispatchers.Default).map { rows ->
-            rows.map { it.toDomain() }
+            emptyList<ServiceProfessional>()
         }
 
     override fun observeProfessionalById(id: Long): Flow<ServiceProfessional?> =
         queries.selectProfessionalById(id).asFlow().mapToOneOrNull(Dispatchers.Default).map { row ->
-            row?.toDomain()
+            null
         }
 
     override suspend fun insertProfessional(professional: ServiceProfessional) {
@@ -59,15 +59,7 @@ internal class ServiceRepositoryImpl(
         queries.bookingCount().executeAsOne()
 
     override suspend fun insertBooking(booking: LegacyBooking) {
-        queries.insertBooking(
-            id = booking.id,
-            user_id = booking.userId,
-            professional_id = booking.professionalId,
-            service_name = booking.serviceName,
-            status = booking.status,
-            amount_paise = booking.amountPaise,
-            booked_at_epoch = booking.bookedAtEpoch,
-        )
+        error("Legacy profiles have no independent technician qualification. Use the verified marketplace.")
     }
 
     private fun Service_bookings.toDomain() = LegacyBooking(

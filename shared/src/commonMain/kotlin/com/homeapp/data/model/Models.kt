@@ -60,6 +60,7 @@ data class Property(
     val ownerId: Long = 0,
     val ownerName: String = "",
     val ownerDeclared: Boolean = false,
+    val ownershipValidUntil: Long = 0,
 ) {
     fun formatPrice(): String = formatUgx(priceUgx.toDouble())
     fun priceUnitLabel(): String = when (priceLabel) {
@@ -218,6 +219,9 @@ data class ServiceProvider(
     val distanceKm: Double = 0.0,
     val etaMinutes: Int = 0,
     val services: List<String> = emptyList(),
+    // Only a current, server-authenticated approval snapshot may populate this.
+    val qualificationValidUntil: Long = 0,
+    val technicianIdentity: String = "",
 ) {
     fun formatPrice(): String = formatUgx(priceFrom.toDouble())
     fun formatDistance(): String = "${formatOneDecimal(distanceKm)} km away"

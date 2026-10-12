@@ -20,7 +20,12 @@ class V1DiscoveryTest {
     }
     @Test fun ownerDeclarationIsRequired() {
         val state=PostPropertyUiState(title="Home",location="Kampala",priceText="500")
-        assertFalse(state.canSubmit);assertTrue(state.copy(ownerDeclared=true).canSubmit)
+        assertFalse(state.canSubmit)
+        assertFalse(state.copy(ownerDeclared=true).canSubmit)
+        val complete=state.copy(ownerDeclared=true,titleNumber="TITLE-123",unitNumber="12",jurisdiction="UG")
+        assertTrue(complete.canSubmit)
+        assertFalse(complete.copy(unitNumber="").canSubmit)
+        assertFalse(complete.copy(jurisdiction="").canSubmit)
     }
     @Test fun schedulesUseKampalaTimeAndRejectInvalidOrPastInput() {
         val epoch=bookingSchedule("Schedule","2027-01-01","12:00",0)

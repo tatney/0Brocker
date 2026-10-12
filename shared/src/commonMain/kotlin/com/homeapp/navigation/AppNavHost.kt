@@ -1,5 +1,9 @@
 package com.homeapp.navigation
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.NavType
@@ -39,6 +43,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
+    var requestedMainTab by rememberSaveable { mutableStateOf<String?>(null) }
     NavHost(navController = navController, startDestination = Routes.SPLASH) {
         composable(Routes.SPLASH) {
             SplashScreen(
@@ -62,6 +67,8 @@ fun AppNavHost() {
         composable(Routes.MAIN) {
             val scope = rememberCoroutineScope()
             AppShell(
+                requestedTab = requestedMainTab,
+                onTabRequestConsumed = { requestedMainTab = null },
                 onPropertyClick = { propertyId -> navController.navigate(Routes.propertyDetail(propertyId)) },
                 onSavedClick = { navController.navigate(Routes.SAVED_HOMES) },
                 onCategoryClick = { category -> navController.navigate(Routes.homeServicesMap(category.name)) },
@@ -157,7 +164,7 @@ fun AppNavHost() {
             ChatThreadScreen(onBack = { navController.navigateUp() })
         }
 
-        // â”€â”€â”€ Home Services Marketplace â”€â”€â”€
+        // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Home Services Marketplace Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         composable(
             route = Routes.HOME_SERVICES_MAP,
             arguments = listOf(
@@ -168,8 +175,12 @@ fun AppNavHost() {
                 },
             ),
         ) { entry ->
-            val categoryName = entry.arguments?.read { getString(Routes.ARG_CATEGORY) }
+            val categoryName = entry.arguments?.read { getStringOrNull(Routes.ARG_CATEGORY) }
             ServiceMapScreen(
+                onNavigateMain = { tab ->
+                    requestedMainTab = tab
+                    navController.popBackStack(Routes.MAIN, inclusive = false)
+                },
                 onProviderClick = { providerId -> navController.navigate(Routes.providerProfile(providerId)) },
                 onRequestService = { providerId -> navController.navigate(Routes.requestService(providerId)) },
                 onBack = { navController.navigateUp() },

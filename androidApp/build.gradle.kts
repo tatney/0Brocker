@@ -24,7 +24,8 @@ android {
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "com.homeapp"
+        applicationId = if (providers.gradleProperty("previewApp").orNull == "true") "com.homeapp.preview" else "com.homeapp"
+        manifestPlaceholders["appLabel"] = if (providers.gradleProperty("previewApp").orNull == "true") "0Brocker Preview" else "0Brocker"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 4
@@ -58,7 +59,7 @@ val projectApkDir = rootProject.layout.projectDirectory.dir("apk")
 androidComponents {
     onVariants(selector().all()) { variant ->
         val upperVariant = variant.name.replaceFirstChar(Char::uppercase)
-        val apkName = "0Brocker-v1.0.0-test-${variant.buildType}.apk"
+        val apkName = if (providers.gradleProperty("previewApp").orNull == "true") "0Brocker-home-preview.apk" else "0Brocker-v1.0.0-test-${variant.buildType}.apk"
         val apkOutputs = layout.buildDirectory.dir("outputs/apk/${variant.name}")
         tasks.register<Copy>("exportApk$upperVariant") {
             dependsOn("assemble$upperVariant")

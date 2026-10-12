@@ -48,6 +48,7 @@ import com.homeapp.core.widgets.CTAButton
 import com.homeapp.core.widgets.TagBadge
 
 data class RequestUiState(
+    val feeAccepted: Boolean = false,
     val description: String = "",
     val serviceSubType: String = "",
     val locationText: String = "Kampala, Uganda",
@@ -115,6 +116,11 @@ fun RequestServiceScreen(
 
             Spacer(Modifier.height(kSpaceMD))
 
+            Text("Diagnostic visit fee: ${provider?.formatPrice() ?: "No eligible quote"}. Repair labour, parts and materials are excluded; approve a separate repair quote first.", style = MaterialTheme.typography.bodySmall)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.material3.Checkbox(checked = state.feeAccepted, onCheckedChange = viewModel::acceptFee)
+                Text("I understand the diagnostic fee and repair exclusions")
+            }
             Text("What do you need help with?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(kSpaceSM))
 

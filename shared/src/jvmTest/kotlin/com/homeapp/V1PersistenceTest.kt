@@ -26,7 +26,10 @@ class V1PersistenceTest {
     }
     @Test fun paymentSelectionDoesNotMarkBookingPaid() = runBlocking {
         val db=db();val repo=MarketplaceRepositoryImpl(db)
-        val id=repo.createBooking(Booking(0,1,1,serviceType="Repair",baseCost=500,platformFee=0,totalCost=500))
+        // Historical booking fixture: new bookings cannot bypass qualification.
+        assertFailsWith<IllegalArgumentException> { repo.createBooking(Booking(0,1,1,serviceType="Repair")) }
+        val id=100L
+        db.homeAppDatabaseQueries.insertMarketplaceBooking(id,1,1,"Sample","","Repair","","COMPLETED","Kampala",0.3476,32.5825,0,0,0,500,0,0,500,"",0,0)
         repo.selectPaymentMethod(id,"Cash")
         val row=db.homeAppDatabaseQueries.selectMarketplaceBookingById(id).executeAsOne()
         assertEquals("Cash",row.payment_method);assertEquals(0L,row.is_paid)

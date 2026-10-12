@@ -22,17 +22,17 @@ internal class PropertyRepositoryImpl(
 
     override fun observeAll(): Flow<List<Property>> =
         queries.selectAllProperties().asFlow().mapToList(Dispatchers.Default).map { rows ->
-            rows.map { it.toDomain() }
+            rows.map { it.toDomain() }.filter { it.ownershipValidUntil > currentTimeEpochSeconds() }
         }
 
     override fun search(query: String): Flow<List<Property>> =
         queries.searchProperties(query).asFlow().mapToList(Dispatchers.Default).map { rows ->
-            rows.map { it.toDomain() }
+            rows.map { it.toDomain() }.filter { it.ownershipValidUntil > currentTimeEpochSeconds() }
         }
 
     override fun observeByType(type: String): Flow<List<Property>> =
         queries.propertiesByType(type).asFlow().mapToList(Dispatchers.Default).map { rows ->
-            rows.map { it.toDomain() }
+            rows.map { it.toDomain() }.filter { it.ownershipValidUntil > currentTimeEpochSeconds() }
         }
 
     override fun observeByFilters(listingType: String?, assetType: String?, category: String?): Flow<List<Property>> =
@@ -41,15 +41,15 @@ internal class PropertyRepositoryImpl(
             assetType = assetType,
             category = category,
         ).asFlow().mapToList(Dispatchers.Default).map { rows ->
-            rows.map { it.toDomain() }
+            rows.map { it.toDomain() }.filter { it.ownershipValidUntil > currentTimeEpochSeconds() }
         }
 
     override fun observeById(id: Long): Flow<Property?> =
-        queries.selectPropertyById(id).asFlow().mapToOneOrNull(Dispatchers.Default).map { it?.toDomain() }
+        queries.selectPropertyById(id).asFlow().mapToOneOrNull(Dispatchers.Default).map { it?.toDomain()?.takeIf { property -> property.ownershipValidUntil > currentTimeEpochSeconds() } }
 
     override fun observeFavoriteProperties(): Flow<List<Property>> =
         queries.favoriteProperties().asFlow().mapToList(Dispatchers.Default).map { rows ->
-            rows.map { it.toDomain() }
+            rows.map { it.toDomain() }.filter { it.ownershipValidUntil > currentTimeEpochSeconds() }
         }
 
     override fun isFavorite(id: Long): Flow<Boolean> =
@@ -70,6 +70,7 @@ internal class PropertyRepositoryImpl(
         queries.propertyCount().executeAsOne()
 
     override suspend fun insert(property: Property) {
+        require(property.ownershipValidUntil > currentTimeEpochSeconds()) { "Publish only through independently verified cloud ownership rules" }
         queries.insertProperty(
             id = property.id,
             title = property.title,

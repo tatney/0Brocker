@@ -25,6 +25,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 
 class SharedLogicDesktopTest {
 
@@ -46,24 +48,13 @@ class SharedLogicDesktopTest {
     }
 
     @Test
-    fun seedPopulatesProperties() = runBlocking {
+    fun seededPropertiesArePreservedButNotPubliclyQualified() = runBlocking {
         val db = buildRepoDb().also { SeedData.seed(it) }
         val repo: PropertyRepository = PropertyRepositoryImpl(db)
-        val properties = repo.observeAll().first()
-        assertEquals(14, properties.size)
-        assertTrue(properties.any { it.listingType == "RENT" })
-        assertTrue(properties.any { it.listingType == "BUY" })
-        assertTrue(properties.any { it.assetType == "CAR" })
-        assertTrue(properties.any { it.priceUgx > 0L })
-    }
-
-    @Test
-    fun propertySearchMatchesTitle() = runBlocking {
-        val db = buildRepoDb().also { SeedData.seed(it) }
-        val repo: PropertyRepository = PropertyRepositoryImpl(db)
-        val bunamwaya = repo.search("Bunamwaya").first()
-        assertEquals(1, bunamwaya.size)
-        assertEquals("Studio Apartment Bunamwaya", bunamwaya[0].title)
+        assertEquals(14L, repo.propertyCount())
+        assertTrue(repo.observeAll().first().isEmpty())
+        assertTrue(repo.search("Bunamwaya").first().isEmpty())
+        assertNull(repo.observeById(1).first())
     }
 
     @Test
@@ -163,44 +154,13 @@ class SharedLogicDesktopTest {
     }
 
     @Test
-    fun serviceCategoryFiltersProfessionals() = runBlocking {
+    fun legacyProfessionalsCannotAppearOrAcceptBookings() = runBlocking {
         val db = buildRepoDb().also { SeedData.seed(it) }
         val repo: ServiceRepository = ServiceRepositoryImpl(db)
-
-        val plumbers = repo.observeByCategory("Plumber").first()
-        assertEquals(1, plumbers.size)
-        assertEquals("Rahul K.", plumbers[0].name)
-
-        val govind = repo.observeProfessionalById(plumbers[0].id).first()
-        assertNotNull(govind)
-        assertTrue(govind.derivedPriceUgx() > 0)
-    }
-
-    @Test
-    fun serviceBookingInsertsAndTracksPerProfessional() = runBlocking {
-        val db = buildRepoDb().also { SeedData.seed(it) }
-        val repo: ServiceRepository = ServiceRepositoryImpl(db)
-
-        val plumber = repo.observeByCategory("Plumber").first()[0]
-        val booking = LegacyBooking(
-            id = plumber.id + 1000L,
-            userId = 1L,
-            professionalId = plumber.id,
-            serviceName = "Plumbing repair",
-            status = "CONFIRMED",
-            amountPaise = 39900L,
-            bookedAtEpoch = 1_600_000_000L,
-        )
-        repo.insertBooking(booking)
-
-        assertEquals(1L, repo.bookingsCount())
-        val forProfessional = repo.observeBookingsForProfessional(plumber.id).first()
-        assertEquals(1, forProfessional.size)
-        assertEquals("Plumbing repair", forProfessional[0].serviceName)
-
-        val all = repo.observeAllBookings().first()
-        assertEquals(1, all.size)
-        assertEquals("CONFIRMED", all[0].status)
+        assertTrue(repo.observeByCategory("Plumber").first().isEmpty())
+        assertNull(repo.observeProfessionalById(1).first())
+        assertFailsWith<IllegalStateException> { repo.insertBooking(LegacyBooking(1001,1,1,"Plumbing repair","CONFIRMED",39900,1600000000)) }
+        assertEquals(0L,repo.bookingsCount())
     }
 
     @Test
@@ -278,24 +238,22 @@ class SharedLogicDesktopTest {
         assertEquals(2L, repo.favoritesCount())
 
         val favorites = repo.observeFavoriteProperties().first()
-        assertEquals(2, favorites.size)
-        assertEquals(true, favorites.any { it.id == 1L })
-        assertEquals(true, favorites.any { it.id == 2L })
+        assertTrue(favorites.isEmpty()) // Saved references remain; unqualified listings stay hidden.
 
         repo.toggleFavorite(1L)
         assertEquals(1L, repo.favoritesCount())
         assertEquals(false, repo.isFavorite(1L).first())
-        assertEquals("3 BHK with Balcony", repo.observeFavoriteProperties().first()[0].title)
+        assertTrue(repo.observeFavoriteProperties().first().isEmpty())
     }
 
     @Test
-    fun postPropertyInsertsNewListing() = runBlocking {
+    fun localVerifiedBooleanCannotPublishProperty() = runBlocking {
         val db = buildRepoDb().also { SeedData.seed(it) }
         val repo: PropertyRepository = PropertyRepositoryImpl(db)
 
         val before = repo.propertyCount()
         val id = before + 1
-        repo.insert(
+        assertFailsWith<IllegalArgumentException> { repo.insert(
             Property(
                 id = id,
                 title = "2 BHK in Koramangala",
@@ -313,13 +271,9 @@ class SharedLogicDesktopTest {
             ),
         )
 
-        assertEquals(before + 1, repo.propertyCount())
-        val all = repo.observeAll().first()
-        assertEquals(before + 1, all.size.toLong())
-        val posted = repo.observeById(id).first()
-        assertNotNull(posted)
-        assertEquals("2 BHK in Koramangala", posted.title)
-        assertEquals("RENT", posted.listingType)
-        assertEquals("/mo", posted.priceLabel)
+        }
+        assertEquals(before, repo.propertyCount())
+        assertTrue(repo.observeAll().first().isEmpty())
+        assertNull(repo.observeById(id).first())
     }
 }

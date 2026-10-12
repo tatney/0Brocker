@@ -22,21 +22,21 @@ internal class MarketplaceRepositoryImpl(
 
     override fun observeAllProviders(): Flow<List<ServiceProvider>> =
         queries.selectAllProviders().asFlow().mapToList(Dispatchers.Default).map { rows ->
-            rows.map { it.toDomain() }
+            rows.map { it.toDomain() }.filter { qualified(it) }
         }
 
     override fun observeProvidersByCategory(category: String): Flow<List<ServiceProvider>> =
         queries.providersByCategory(category).asFlow().mapToList(Dispatchers.Default).map { rows ->
-            rows.map { it.toDomain() }
+            rows.map { it.toDomain() }.filter { qualified(it) }
         }
 
     override fun observeProviderById(id: Long): Flow<ServiceProvider?> =
         queries.selectProviderById(id).asFlow().mapToOneOrNull(Dispatchers.Default).map { row ->
-            row?.toDomain()
+            row?.toDomain()?.takeIf { qualified(it) }
         }
 
     override suspend fun searchProviders(query: String): List<ServiceProvider> =
-        queries.selectAllProviders().executeAsList().map { it.toDomain() }.filter {
+        queries.selectAllProviders().executeAsList().map { it.toDomain() }.filter { qualified(it) }.filter {
             it.name.contains(query, ignoreCase = true) ||
                 it.category.contains(query, ignoreCase = true) ||
                 it.headline.contains(query, ignoreCase = true)
@@ -52,7 +52,19 @@ internal class MarketplaceRepositoryImpl(
             row?.toDomain()
         }
 
+    private fun qualified(provider: ServiceProvider) = com.homeapp.features.verification.VerificationPolicy.eligible(provider, com.homeapp.core.time.currentTimeEpochSeconds())
+
+    private fun requireQualified(id: Long) {
+        val provider = queries.selectProviderById(id).executeAsOneOrNull()?.toDomain()
+        require(provider != null && qualified(provider)) { "No currently qualified technician. Independent cloud verification is required." }
+    }
+
     override suspend fun createBooking(booking: Booking): Long {
+        requireQualified(booking.providerId)
+        val provider = queries.selectProviderById(booking.providerId).executeAsOne().toDomain()
+        require(provider.status == ProviderStatus.AVAILABLE) { "Technician unavailable" }
+        require(booking.serviceType.equals(provider.category, ignoreCase = true)) { "Service does not match technician qualification" }
+        require(com.homeapp.features.services.map.haversineKm(com.homeapp.features.services.map.GeoPoint(booking.lat,booking.lng),com.homeapp.features.services.map.GeoPoint(provider.lat,provider.lng)) <= provider.coverageRadiusKm) { "Outside technician service area" }
         val id = booking.id.takeIf { it > 0 } ?: (queries.marketplaceBookingCount().executeAsOne() + 1)
         queries.insertMarketplaceBooking(
             id = id, customer_id = booking.customerId, provider_id = booking.providerId,
@@ -70,6 +82,7 @@ internal class MarketplaceRepositoryImpl(
     }
 
     override suspend fun updateBookingStatus(bookingId: Long, status: BookingStatus) {
+        if (status != BookingStatus.CANCELLED) requireQualified(queries.selectMarketplaceBookingById(bookingId).executeAsOne().provider_id)
         queries.updateBookingStatus(status = status.name, id = bookingId)
     }
 
@@ -94,6 +107,7 @@ internal class MarketplaceRepositoryImpl(
         }
 
     override suspend fun insertQuote(quote: Quote) {
+        requireQualified(quote.providerId)
         val count = queries.selectAllProviders().executeAsList().size.toLong()
         queries.insertQuote(
             id = quote.id, booking_id = quote.bookingId, provider_id = quote.providerId,
@@ -130,7 +144,7 @@ internal class MarketplaceRepositoryImpl(
         rating = rating, reviewsCount = reviews_count, jobsCompleted = jobs_completed,
         experienceYears = experience_years.toInt(), headline = headline,
         lat = lat, lng = lng,
-        status = try { ProviderStatus.valueOf(status) } catch (_: Exception) { ProviderStatus.AVAILABLE },
+        status = try { ProviderStatus.valueOf(status) } catch (_: Exception) { ProviderStatus.OFFLINE },
         priceFrom = price_from, isVerified = is_verified == 1L,
         coverageRadiusKm = coverage_radius_km,
     )

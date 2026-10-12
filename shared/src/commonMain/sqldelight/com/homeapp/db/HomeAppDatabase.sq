@@ -2,6 +2,35 @@
 -- All money is stored as integer paise (paise = integer rupees * 100, fraction in paise)
 -- to avoid floating point drift. Timestamps are integer epoch seconds.
 
+CREATE TABLE verification_applications (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    jurisdiction TEXT NOT NULL,
+    credential_number TEXT NOT NULL DEFAULT '',
+    issuer TEXT NOT NULL DEFAULT '',
+    expires_on TEXT NOT NULL DEFAULT '',
+    unit_number TEXT NOT NULL DEFAULT '',
+    relationship TEXT NOT NULL DEFAULT 'individual_owner',
+    payload TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    extraction_summary TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL
+);
+
+CREATE UNIQUE INDEX verification_unique_property ON verification_applications(jurisdiction, subject, unit_number) WHERE kind = 'property' AND status NOT IN ('REJECTED', 'DUPLICATE_PENDING');
+
+verificationByUser:
+SELECT * FROM verification_applications WHERE user_id = ? ORDER BY id DESC;
+
+insertVerification:
+INSERT INTO verification_applications(user_id,kind,subject,jurisdiction,credential_number,issuer,expires_on,unit_number,relationship,payload,created_at)
+VALUES (?,?,?,?,?,?,?,?,?,?,?);
+
+saveVerificationExtraction:
+UPDATE verification_applications SET extraction_summary = ? WHERE id = ? AND user_id = ?;
+
 CREATE TABLE users (
     id INTEGER PRIMARY KEY,
     full_name TEXT NOT NULL,

@@ -55,7 +55,7 @@ export async function updateBookingStatus(id,status,previousStatus){
 }
 export async function verifyRecord(name,id){
   if(!['properties','providers'].includes(name))return {data:null,error:'This record cannot be verified.'};
-  return patchRecord(name,id,{is_verified:true});
+  return {data:null,error:'One-click verification is disabled. Open Verification to review independent evidence.'};
 }
 export function subscribeToBookings(onChange){
   if((!isSupabaseConfigured || isTestWorkspace()))return ()=>{};
