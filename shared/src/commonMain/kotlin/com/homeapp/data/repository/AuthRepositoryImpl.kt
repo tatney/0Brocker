@@ -30,7 +30,7 @@ internal class AuthRepositoryImpl(
         // All secrets are stored hashed; existing demo account gets its hash
         // filled in during the upgrade path, so compare against the stored hash.
         val expectedHash = PasswordHasher.hash(password, user.email ?: normalized)
-        if (user.passwordHash.isNotBlank() && expectedHash != user.passwordHash) {
+        if (user.passwordHash.isBlank() || expectedHash != user.passwordHash) {
             return Result.failure(invalidCredentials())
         }
 
@@ -98,7 +98,7 @@ internal class AuthRepositoryImpl(
     }
 
     private fun createNewUser(email: String, password: String): User {
-        val id = queries.userCount().executeAsOne() + 1
+        val id = queries.userMaxId().executeAsOne() + 1
         val user = User(
             id = id,
             fullName = "",

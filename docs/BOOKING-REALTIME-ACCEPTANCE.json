@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-15",
+  "projectRef": "snvplaeaoxmuimtpxxpn",
+  "delivery": {
+    "projectRef": "snvplaeaoxmuimtpxxpn",
+    "checks": [
+      {
+        "name": "Designated admin JWT passes server role check",
+        "passed": true
+      },
+      {
+        "name": "Customer/admin/other-owner channels subscribe",
+        "passed": true
+      },
+      {
+        "name": "Customer receives actual booking UPDATE",
+        "passed": true
+      },
+      {
+        "name": "Admin receives actual booking UPDATE",
+        "passed": true
+      },
+      {
+        "name": "Other owner receives no unauthorised booking UPDATE",
+        "passed": true
+      },
+      {
+        "name": "Other owner cannot read the booking through REST",
+        "passed": true
+      },
+      {
+        "name": "Admin can read live booking records",
+        "passed": true
+      }
+    ],
+    "deliveryMs": 525
+  },
+  "browser": {
+    "email": "rutatinafrancis@gmail.com",
+    "liveAdminLogin": "passed",
+    "bookingsPage": "passed",
+    "realtimeConnectedBadge": "passed",
+    "dataMode": "live Supabase; no test workspace bypass"
+  },
+  "nativeLiveTest": "Passed: actual booking event and authoritative snapshot refresh within five seconds",
+  "temporaryBooking": "Removed",
+  "productionAdminFrontendDeployment": "Not performed"
+}

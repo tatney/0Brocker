@@ -1,191 +1,71 @@
 package com.homeapp.features.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.homeapp.core.icons.IconCalendar
-import com.homeapp.core.icons.IconPhone
-import com.homeapp.core.icons.IconWallet
-import com.homeapp.core.theme.kAccentTeal
-import com.homeapp.core.theme.kPrimaryRed
-import com.homeapp.core.theme.kPrimaryRedLight
-import com.homeapp.core.theme.kSpaceLG
-import com.homeapp.core.theme.kSpaceMD
-import com.homeapp.core.theme.kSpaceSM
-import com.homeapp.core.theme.kSpaceXS
-import com.homeapp.core.theme.kTextSecondary
-import com.homeapp.core.theme.kWalletNavy
-import com.homeapp.core.widgets.AppCard
-import com.homeapp.core.widgets.OutlineButton
-import com.homeapp.core.widgets.SectionHeader
-import com.homeapp.data.model.LegacyBooking
+import com.homeapp.core.icons.*
 
 @Composable
-fun ProfileScreen(
-    onSignOut: () -> Unit,
-    viewModel: ProfileViewModel = viewModel { ProfileViewModel() },
-) {
+fun ProfileScreen(onSignOut: () -> Unit, onBack: () -> Unit = {}, viewModel: ProfileViewModel = viewModel { ProfileViewModel() }, onVerification: () -> Unit = {}, onWorkspace: () -> Unit = {}) {
     val state by viewModel.uiState.collectAsState()
     val user = state.user
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = kSpaceMD, vertical = kSpaceSM),
-        verticalArrangement = Arrangement.spacedBy(kSpaceMD),
-    ) {
-        item {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .background(kPrimaryRedLight, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(text = user?.avatarEmoji ?: "🙂", fontSize = 30.sp)
-                }
-                Spacer(Modifier.width(kSpaceMD))
-                Column {
-                    Text(
-                        text = user?.fullName ?: "Guest",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            IconPhone,
-                            contentDescription = null,
-                            tint = kTextSecondary,
-                            modifier = Modifier.size(14.dp),
-                        )
-                        Spacer(Modifier.width(kSpaceXS))
-                        Text(
-                            text = user?.email ?: user?.phone ?: "-",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = kTextSecondary,
-                        )
-                    }
+    var information by rememberSaveable { mutableStateOf<String?>(null) }
+    val rose = Color(0xFFFF355D)
+    if(information != null) AlertDialog(onDismissRequest = { information = null }, title = { Text(information!!) }, text = { Text("This service is not connected in the testing app yet.") }, confirmButton = { TextButton(onClick = { information = null }) { Text("Close") } })
+    Column(Modifier.fillMaxSize().background(Color.White)) {
+        Row(Modifier.fillMaxWidth().background(rose).height(64.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(IconBack, "Back", Modifier.size(20.dp), tint = Color.White) }
+            Text("Profile", Modifier.padding(start = 16.dp), color = Color.White, fontSize = 22.sp)
+        }
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(24.dp)) {
+            Row(Modifier.padding(vertical = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text((user?.fullName ?: "Guest").split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.take(1).uppercase() }, color = rose, fontSize = 22.sp)
+                Text(user?.fullName ?: "Guest", Modifier.padding(start = 24.dp), fontSize = 24.sp)
+            }
+            Spacer(Modifier.height(28.dp))
+            Text("PHONE NUMBER", fontSize = 13.sp, color = Color.DarkGray)
+            Text(user?.phone?.takeIf { it.isNotBlank() } ?: "Not provided", fontSize = 15.sp)
+            Spacer(Modifier.height(28.dp))
+            Text("EMAIL ADDRESS", fontSize = 13.sp, color = Color.DarkGray)
+            Text(user?.email ?: "Not provided", fontSize = 15.sp)
+            Spacer(Modifier.height(24.dp))
+            Button(onClick=onWorkspace,colors=ButtonDefaults.buttonColors(containerColor=rose)) {Text("Customer, provider and owner workspaces")}
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEAF0))) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Verification centre", fontSize = 19.sp)
+                    Text("Provider credentials, property ownership and document assistance", fontSize = 13.sp)
+                    Button(onClick = onVerification, colors = ButtonDefaults.buttonColors(containerColor = rose)) { Text("Open verification centre") }
                 }
             }
-        }
-
-        item {
-            AppCard(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(kSpaceLG)) {
-                    Text(
-                        text = "Wallet balance",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = kTextSecondary,
-                    )
-                    Spacer(Modifier.height(kSpaceXS))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            IconWallet,
-                            contentDescription = null,
-                            tint = kAccentTeal,
-                            modifier = Modifier.size(22.dp),
-                        )
-                        Spacer(Modifier.width(kSpaceSM))
-                        Text(
-                            text = state.account?.formatBalance() ?: "UGX 0",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = kWalletNavy,
-                        )
-                    }
+            Spacer(Modifier.height(36.dp))
+            HorizontalDivider()
+            Row(Modifier.padding(vertical = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(IconPhone, null, Modifier.size(22.dp), tint = Color(0xFFE9BD47))
+                Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
+                    Text("Caller Identification & Feedback", fontSize = 14.sp)
+                    Text("Caller information preferences", fontSize = 12.sp, color = Color.Gray)
                 }
+                Switch(checked = false, onCheckedChange = { information = "Caller Identification" })
             }
-        }
-
-        item {
-            SectionHeader(title = "My bookings", actionLabel = null, onAction = null)
-        }
-        if (state.bookings.isEmpty()) {
-            item {
-                Text(
-                    text = "No bookings yet.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = kTextSecondary,
-                )
-            }
-        } else {
-            item {
-                AppCard {
-                    Column(Modifier.padding(horizontal = kSpaceMD, vertical = kSpaceXS)) {
-                        state.bookings.forEach { booking ->
-                            BookingRow(booking)
-                        }
-                    }
+            HorizontalDivider()
+            Row(Modifier.padding(vertical = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(IconChat, null, Modifier.size(22.dp), tint = Color(0xFF00A965))
+                Column(Modifier.weight(1f).padding(horizontal = 16.dp)) {
+                    Text("WhatsApp Alerts", fontSize = 14.sp)
+                    Text("Get updates on WhatsApp", fontSize = 12.sp, color = Color.Gray)
                 }
+                Switch(checked = false, onCheckedChange = { information = "WhatsApp Alerts" })
             }
         }
-
-        item {
-            Spacer(Modifier.height(kSpaceSM))
-            OutlineButton(
-                text = "Sign out",
-                onClick = onSignOut,
-            )
-            Spacer(Modifier.height(kSpaceMD))
-        }
-    }
-}
-
-@Composable
-private fun BookingRow(booking: LegacyBooking) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = kSpaceSM),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            IconCalendar,
-            contentDescription = null,
-            tint = kPrimaryRed,
-            modifier = Modifier.size(18.dp),
-        )
-        Spacer(Modifier.width(kSpaceSM))
-        Column(Modifier.weight(1f)) {
-            Text(
-                text = booking.serviceName,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "Booking #${booking.id}",
-                style = MaterialTheme.typography.labelSmall,
-                color = kTextSecondary,
-            )
-        }
-        Text(
-            text = booking.status,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = kPrimaryRed,
-        )
+        Button(onClick = onSignOut, modifier = Modifier.fillMaxWidth().padding(20.dp).height(48.dp), shape = androidx.compose.foundation.shape.RoundedCornerShape(0.dp), colors = ButtonDefaults.buttonColors(containerColor = rose)) { Text("Logout") }
     }
 }

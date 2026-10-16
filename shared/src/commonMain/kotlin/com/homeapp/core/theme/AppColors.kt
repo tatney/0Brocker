@@ -129,6 +129,8 @@ private val CATEGORY_ACCENTS: List<Color> = listOf(
     Color(0xFFD6336C), // BEAUTY       — rose
     Color(0xFF44546A), // AUTOMOTIVE   — slate
     Color(0xFF9C3FBF), // APPLIANCE    — violet-magenta
+    Color(0xFF647592), // CHEF
+    Color(0xFF9A5929), // WELDING
 )
 
 /**

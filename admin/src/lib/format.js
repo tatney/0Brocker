@@ -30,7 +30,7 @@ export function formatDate(value) {
   if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Africa/Kampala' });
 }
 
 export function formatRelative(value) {
@@ -62,8 +62,9 @@ export function titleCase(value) {
 
 export function toCsv(rows, columns) {
   const escape = (cell) => {
-    const text = cell === null || cell === undefined ? '' : String(cell);
-    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    let text = cell === null || cell === undefined ? '' : String(cell);
+    if (typeof cell === 'string' && /^[=+\-@\t\r]/.test(text)) text = "'" + text;
+    return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
   };
   const header = columns.map((c) => escape(c.label)).join(',');
   const body = rows.map((row) => columns.map((c) => escape(c.value(row))).join(','));

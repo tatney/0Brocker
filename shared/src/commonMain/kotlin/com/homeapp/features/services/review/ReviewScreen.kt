@@ -138,6 +138,8 @@ fun ReviewScreen(
 
             Spacer(Modifier.height(kSpaceLG))
 
+            state.error?.let { Text(it,color=kPrimaryRed) }
+            Text("Honest feedback affects service reputation, not qualification. No payment or positive rating is required.",style=MaterialTheme.typography.bodySmall)
             // Category ratings
             val categories = listOf("Service Quality", "Professionalism", "Timeliness", "Communication", "Value for Money")
             categories.forEachIndexed { index, category ->

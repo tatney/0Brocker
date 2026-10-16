@@ -17,6 +17,19 @@ internal class WalletRepositoryImpl(
 
     private val queries get() = db.homeAppDatabaseQueries
 
+    override suspend fun ensurePreviewAccount() { db.transaction {val user=queries.selectActiveSession().executeAsOneOrNull()?.takeIf{it.is_onboarded==1L}?.user_id ?: return@transaction;if(queries.selectPrimaryAccount().executeAsOneOrNull()==null) queries.insertAccount(user,user,0,"UGX","","","Preview wallet")}}
+    override suspend fun recordPreviewTransfer(accountId: Long,amount: Long,isCredit: Boolean,title: String,meta: String) {
+      require(amount in 1..100000000000L && title.length in 1..120 && meta.length<=200)
+      db.transaction {
+       val user=queries.selectActiveSession().executeAsOneOrNull()?.takeIf{it.is_onboarded==1L}?.user_id ?: error("Sign in to use the test wallet")
+       val account=queries.walletById(accountId).executeAsOneOrNull() ?: error("Wallet unavailable")
+       require(account.user_id==user){"Wallet belongs to another account"}
+       require(isCredit || account.balance_paise>=amount){"Insufficient balance"}
+       require(!isCredit || account.balance_paise<=Long.MAX_VALUE-amount){"Balance limit exceeded"}
+       queries.updateAccountBalance(account.balance_paise+if(isCredit)amount else -amount,accountId)
+       queries.insertTransaction(queries.nextWalletTransactionId().executeAsOne(),accountId,title,meta,amount,if(isCredit)1 else 0,com.homeapp.core.time.currentTimeEpochSeconds())
+      }
+    }
     override fun observePrimaryAccount(): Flow<WalletAccount?> =
         queries.selectPrimaryAccount().asFlow().mapToOneOrNull(Dispatchers.Default).map { row ->
             row?.let {

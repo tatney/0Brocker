@@ -57,48 +57,26 @@ data class Property(
     val isVerified: Boolean,
     val bedrooms: String,
     val emoji: String,
+    val ownerId: Long = 0,
+    val ownerName: String = "",
+    val ownerDeclared: Boolean = false,
+    val ownershipValidUntil: Long = 0,
 ) {
     fun formatPrice(): String = formatUgx(priceUgx.toDouble())
     fun priceUnitLabel(): String = when (priceLabel) {
         "/mo" -> "per month"
         "/day" -> "per day"
         "/acre" -> "per acre"
-        else -> "onwards"
+        else -> "asking price"
     }
     fun isRent(): Boolean = listingType == "RENT"
-    fun amenities(): List<Pair<String, String>> {
-        val list = mutableListOf<Pair<String, String>>()
-        when (assetType) {
-            "LAND" -> {
-                list += "Plot Type" to category.titleLowercase()
-                list += "Area" to when (category) {
-                    "COMMERCIAL" -> "1.2 acres"
-                    else -> "0.5 acres"
-                }
-                if (isRent()) list += "Lease" to "99-year"
-                else list += "Ownership" to "Title Deed (Freehold)"
-            }
-            "CAR" -> {
-                list += "Usage" to category.titleLowercase()
-                list += "Condition" to "Certified inspected"
-                if (isRent()) list += "Mileage" to "Unlimited"
-                else list += "Warranty" to "1-year/20,000 km"
-            }
-            else -> {
-                list += "Bedrooms" to bedrooms
-                list += "Area" to when (bedrooms) {
-                    "2 BHK" -> "1,050 sq.ft"
-                    "3 BHK" -> "1,450 sq.ft"
-                    else -> "750 sq.ft"
-                }
-                list += "Type" to category.titleLowercase()
-                if (isRent()) list += "Deposit" to formatUgx(priceUgx * 2)
-                else list += "Ownership" to "Freehold"
-            }
-        }
-        list += "Furnishing" to "Semi-furnished"
-        if (isVerified) list += "Verified" to "Owner vetted"
-        return list
+    fun amenities(): List<Pair<String, String>> = buildList {
+        if (assetType == "HOUSE") add("Bedrooms" to bedrooms)
+        add("Use" to category.titleLowercase())
+        add("Area" to "Not supplied")
+        add("Deposit / title" to "Confirm with owner")
+        add("Furnishing" to "Not supplied")
+        add("Brokerage" to "None")
     }
 }
 
@@ -213,6 +191,8 @@ enum class ServiceCategory(val label: String) {
     BEAUTY("Beauty"),
     AUTOMOTIVE("Automotive"),
     APPLIANCE("Appliance"),
+    CHEF("Chef"),
+    WELDING("Welding"),
 }
 
 enum class ProviderStatus(val label: String) {
@@ -240,7 +220,12 @@ data class ServiceProvider(
     val coverageRadiusKm: Double,
     val distanceKm: Double = 0.0,
     val etaMinutes: Int = 0,
+    val distanceOriginLat: Double? = null,
+    val distanceOriginLng: Double? = null,
     val services: List<String> = emptyList(),
+    // Only a current, server-authenticated approval snapshot may populate this.
+    val qualificationValidUntil: Long = 0,
+    val technicianIdentity: String = "",
 ) {
     fun formatPrice(): String = formatUgx(priceFrom.toDouble())
     fun formatDistance(): String = "${formatOneDecimal(distanceKm)} km away"
@@ -255,8 +240,12 @@ enum class BookingStatus(val label: String) {
     EN_ROUTE("Provider En Route"),
     ARRIVED("Provider Arrived"),
     INSPECTION("Inspection"),
+    QUOTED("Quote awaiting decision"),
     IN_PROGRESS("Service In Progress"),
     MATERIALS_REQUIRED("Materials Required"),
+    AWAITING_CONFIRMATION("Awaiting customer confirmation"),
+    REVIEW_REQUIRED("Cancellation under review"),
+    DISPUTED("Disputed"),
     COMPLETED("Service Completed"),
     PAYMENT("Payment"),
     REVIEWED("Reviewed"),
@@ -271,6 +260,8 @@ data class Booking(
     val providerEmoji: String = "",
     val serviceType: String,
     val description: String = "",
+    val workType: String = "General",
+    val requestKey: String = "",
     val status: BookingStatus = BookingStatus.SEARCHING,
     val locationText: String = "",
     val lat: Double = 0.0,

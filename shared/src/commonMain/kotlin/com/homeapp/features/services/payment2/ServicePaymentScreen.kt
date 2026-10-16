@@ -159,10 +159,12 @@ fun ServicePaymentScreen(
 
             Spacer(Modifier.weight(1f))
 
+            Text("Sandbox payment: no money is transferred, no card or mobile-money account is charged.", style = MaterialTheme.typography.bodySmall, color = kTextSecondary)
+            state.error?.let {Text(it,color=kPrimaryRed)}
             CTAButton(
-                text = "Pay ${formatUgx(totalCost.toDouble())}",
+                text = "Simulate payment",
                 onClick = { viewModel.pay(onPay) },
-                enabled = state.selectedMethod.isNotBlank() && !state.isBusy,
+                enabled = !com.homeapp.data.cloud.CloudRuntime.enabled && state.selectedMethod.isNotBlank() && !state.isBusy,
             )
             Spacer(Modifier.height(kSpaceMD))
         }

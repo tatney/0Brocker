@@ -1,4 +1,4 @@
-﻿package com.homeapp.features.property
+package com.homeapp.features.property
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -76,7 +77,7 @@ fun PostPropertyScreen(
         ) {
             Spacer(Modifier.height(kSpaceXS))
             Text(
-                text = "Reach thousands of verified tenants & buyers",
+                text = "List directly as the owner. No brokers, agents or resale leads.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = kTextSecondary,
             )
@@ -155,7 +156,7 @@ fun PostPropertyScreen(
         )
 
         Spacer(Modifier.height(kSpaceMD))
-        FieldLabel("Price (UGX per month / onwards)")
+        FieldLabel("Price (UGX; rent per month, sale total)")
         Spacer(Modifier.height(kSpaceSM))
         OutlinedTextField(
             value = state.priceText,
@@ -192,6 +193,29 @@ fun PostPropertyScreen(
             }
         }
 
+        Spacer(Modifier.height(kSpaceMD))
+        OutlinedTextField(value = state.titleNumber, onValueChange = viewModel::onTitleNumber,
+            label = { Text("Official title / property identifier") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+        Spacer(Modifier.height(kSpaceSM))
+        OutlinedTextField(value = state.unitNumber, onValueChange = viewModel::onUnitNumber,
+            label = { Text("Exact unit / parcel") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+        Spacer(Modifier.height(kSpaceSM))
+        OutlinedTextField(value = state.jurisdiction, onValueChange = viewModel::onJurisdiction,
+            label = { Text("Country / jurisdiction") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+        Spacer(Modifier.height(kSpaceMD))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = state.companyRepresentative, onCheckedChange = viewModel::onCompanyRepresentative)
+            Text("I represent the company that owns this property")
+        }
+        if (state.companyRepresentative) {
+            OutlinedTextField(value = state.companyIdentifier, onValueChange = viewModel::onCompanyIdentifier, label = { Text("Official owning company identifier") }, modifier = Modifier.fillMaxWidth())
+            Text("Independent company ownership and representative authority checks are required.", style = MaterialTheme.typography.bodySmall)
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = state.ownerDeclared, onCheckedChange = viewModel::onOwnerDeclared)
+            Text(if (state.companyRepresentative) "The company owns this property and I am authorised to represent it." else "I own this property. I am not listing as a broker or intermediary.", style = MaterialTheme.typography.bodyMedium)
+        }
+        Text("Owner declaration is not identity or title verification. Submissions remain pending and outside public discovery.", style = MaterialTheme.typography.bodySmall, color = kTextSecondary)
         state.error?.let { msg ->
             Spacer(Modifier.height(kSpaceSM))
             Text(text = msg, color = kPrimaryRed, style = MaterialTheme.typography.labelMedium)
@@ -199,7 +223,7 @@ fun PostPropertyScreen(
 
         Spacer(Modifier.height(kSpaceLG))
         CTAButton(
-            text = "Post listing",
+            text = "Submit for ownership verification",
             onClick = { viewModel.postProperty() },
             enabled = state.canSubmit,
         )
@@ -234,14 +258,14 @@ private fun PostSuccess(onDone: () -> Unit = {}) {
             AppStateIcon(icon = IconCheck, tint = kStatusSuccess)
             Spacer(Modifier.height(kSpaceMD))
             Text(
-                text = "Listing posted!",
+                text = "Ownership verification pending",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(Modifier.height(kSpaceSM))
             Text(
-                text = "Your property is now live and visible in the Property feed.",
+                text = "Your property application is saved on this test device. It is excluded from public listings until independent ownership checks pass. View it in Verification centre.",
                 style = MaterialTheme.typography.bodyLarge,
                 color = kTextSecondary,
             )

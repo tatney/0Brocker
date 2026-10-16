@@ -1,3 +1,4 @@
+import { VerifyAction } from '../components/VerifyAction.jsx';
 import { useMemo, useState } from 'react';
 import { Download, Filter } from 'lucide-react';
 import { filterRows, useResource } from '../data/useResource.js';
@@ -19,7 +20,7 @@ const LISTING_TYPES = ['ALL', 'RENT', 'BUY', 'PG', 'PLOT'];
 const ASSET_TYPES = ['ALL', 'HOUSE', 'LAND', 'CAR'];
 
 export function Properties() {
-  const { rows, source, error, loading } = useResource('properties');
+  const { rows, setRows, source, error, loading } = useResource('properties');
   const [query, setQuery] = useState('');
   const [listingType, setListingType] = useState('ALL');
   const [assetType, setAssetType] = useState('ALL');
@@ -41,7 +42,7 @@ export function Properties() {
     { key: 'asset', header: 'Asset', render: (row) => <span className="muted">{row.asset_type?.toLowerCase()}</span> },
     { key: 'price', header: 'Price', align: 'right', render: (row) => `${formatUgx(row.price_ugx)} ${row.price_label ?? ''}`.trim() },
     { key: 'rating', header: 'Rating', align: 'right', render: (row) => <Rating value={row.rating} /> },
-    { key: 'verified', header: 'Verified', align: 'right', render: (row) => (row.is_verified ? <span className="tick">Yes</span> : <span className="muted">No</span>) },
+    { key: 'moderation', header: 'Verification', align: 'right', render: (row) => <VerifyAction name="properties" row={row} onSaved={saved=>setRows(current=>current.map(r=>r.id===saved.id?saved:r))}/> },
   ];
 
   const exportCsv = () =>

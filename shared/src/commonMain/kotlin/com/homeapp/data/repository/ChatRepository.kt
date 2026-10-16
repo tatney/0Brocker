@@ -8,6 +8,7 @@ interface ChatRepository {
     fun observeConversations(): Flow<List<ChatConversation>>
     fun observeConversation(id: Long): Flow<ChatConversation?>
     fun observeMessages(conversationId: Long): Flow<List<ChatMessage>>
+    suspend fun openOwnerConversation(propertyId: Long, userId: Long, ownerName: String): Long
     suspend fun conversationCount(): Long
     suspend fun unreadTotal(): Long
     suspend fun sendMessage(conversationId: Long, text: String)

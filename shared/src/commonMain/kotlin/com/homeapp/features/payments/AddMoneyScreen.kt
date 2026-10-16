@@ -104,7 +104,7 @@ fun AddMoneyScreen(
                         Icon(IconWallet, contentDescription = null, tint = kPrimaryRed, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(kSpaceSM))
                         Text(
-                            text = "Top up from UPI, Netbanking or Cards",
+                            text = "Add simulated balance. No bank or mobile money is charged.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = kTextSecondary,
                         )

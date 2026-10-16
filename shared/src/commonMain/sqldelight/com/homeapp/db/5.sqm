@@ -1,0 +1,8 @@
+UPDATE verification_applications SET subject = UPPER(TRIM(subject)), jurisdiction = UPPER(TRIM(jurisdiction)), unit_number = UPPER(TRIM(unit_number));
+-- Keep historical duplicate submissions visible without publishing any of them.
+UPDATE verification_applications SET status = 'DUPLICATE_PENDING'
+WHERE kind = 'property' AND status != 'REJECTED' AND id NOT IN (
+    SELECT MIN(id) FROM verification_applications WHERE kind = 'property' AND status != 'REJECTED'
+    GROUP BY jurisdiction, subject, unit_number
+);
+CREATE UNIQUE INDEX verification_unique_property ON verification_applications(jurisdiction, subject, unit_number) WHERE kind = 'property' AND status NOT IN ('REJECTED', 'DUPLICATE_PENDING');

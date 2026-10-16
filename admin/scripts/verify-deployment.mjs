@@ -1,0 +1,31 @@
+﻿import fs from 'node:fs';
+import path from 'node:path';
+import { chromium } from '@playwright/test';
+const cwd=path.resolve(import.meta.dirname,'..');
+const {url}=JSON.parse(fs.readFileSync(path.join(cwd,'deployment.json'),'utf8'));
+const response=await fetch(url);
+if(!response.ok)throw new Error(`Deployment returned HTTP ${response.status}`);
+for(const [key,value] of [['x-content-type-options','nosniff'],['x-frame-options','DENY']])if(response.headers.get(key)!==value)throw new Error(`Missing deployment header: ${key}`);
+if(!response.headers.get('content-security-policy')?.includes("frame-ancestors 'none'"))throw new Error('Content security policy missing.');
+console.log('Production HTTP 200; security headers verified.');
+const browser=await chromium.launch();
+try{
+ const page=await browser.newPage({viewport:{width:1280,height:850}});const requests=[],errors=[];
+ page.on('request',r=>{if(r.url().includes('/rest/v1/'))requests.push(r.url());});
+ page.on('pageerror',e=>errors.push(e.message));
+ const failed=[];page.on('requestfailed',r=>failed.push(r.url()));
+ await page.goto(url,{waitUntil:'networkidle'});
+ await page.getByRole('heading',{name:'Welcome back.'}).waitFor();
+ await page.getByLabel('Email address').waitFor();
+ await page.getByLabel('Password').waitFor();
+ if(await page.locator('.shell').count())throw new Error('Dashboard exposed before login.');
+ if(requests.length)throw new Error('Database queried before login.');
+ if(errors.length||failed.length)throw new Error(`Browser errors or failed requests: ${errors.join('; ')} ${failed.join('; ')}`);
+ fs.mkdirSync(path.join(cwd,'previews'),{recursive:true});
+ await page.screenshot({path:path.join(cwd,'previews/production-sign-in.png'),fullPage:true});
+ await page.setViewportSize({width:375,height:812});
+ if(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth))throw new Error('Mobile sign-in overflows viewport.');
+ await page.screenshot({path:path.join(cwd,'previews/production-sign-in-mobile.png'),fullPage:true});
+ console.log('Hosted desktop/mobile login verified; no private database requests or browser errors.');
+ console.log(url);
+}finally{await browser.close();}

@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.homeapp.data.AppContainer
 import com.homeapp.data.model.AuthState
-import com.homeapp.data.model.LegacyBooking
+import com.homeapp.data.model.Booking
 import com.homeapp.data.model.User
 import com.homeapp.data.model.WalletAccount
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,14 +15,14 @@ import kotlinx.coroutines.flow.stateIn
 data class ProfileUiState(
     val user: User? = null,
     val account: WalletAccount? = null,
-    val bookings: List<LegacyBooking> = emptyList(),
+    val bookings: List<Booking> = emptyList(),
 )
 
 class ProfileViewModel : ViewModel() {
 
     private val authRepo = AppContainer.authRepository
     private val walletRepo = AppContainer.walletRepository
-    private val serviceRepo = AppContainer.serviceRepository
+    private val serviceRepo = AppContainer.marketplaceRepository
 
     val uiState: StateFlow<ProfileUiState> =
         combine(
@@ -31,6 +31,6 @@ class ProfileViewModel : ViewModel() {
             serviceRepo.observeAllBookings(),
         ) { auth, account, bookings ->
             val user = (auth as? AuthState.SignedIn)?.user
-            ProfileUiState(user = user, account = account, bookings = bookings)
+            ProfileUiState(user = user, account = account, bookings = bookings.filter { it.customerId == user?.id })
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ProfileUiState())
 }

@@ -32,6 +32,8 @@ object DatabaseProvider {
         if (db.homeAppDatabaseQueries.userCount().executeAsOne() == 0L) {
             SeedData.seed(db)
         }
+        SeedData.ensureTestAccount(db)
+        SeedData.ensureRoleTestAccounts(db)
         _database = db
     }
 }

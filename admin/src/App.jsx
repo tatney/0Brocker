@@ -1,3 +1,5 @@
+import { isTestWorkspace } from './lib/workspace.js';
+import { AdminGate } from './components/AdminGate.jsx';
 import { useEffect, useState } from 'react';
 import {
   Activity,
@@ -17,8 +19,12 @@ import { Properties } from './pages/Properties.jsx';
 import { People } from './pages/People.jsx';
 import { Money } from './pages/Money.jsx';
 import { Reviews } from './pages/Reviews.jsx';
+import { Verification } from './pages/Verification.jsx';
+import { Marketplace } from './pages/Marketplace.jsx';
 
 const NAV = [
+  { id: 'marketplace', label: 'Marketplace', icon: Wrench, component: Marketplace },
+  { id: 'verification', label: 'Verification', icon: Star, component: Verification },
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, component: Overview },
   { id: 'bookings', label: 'Bookings', icon: Wrench, component: Bookings },
   { id: 'providers', label: 'Providers', icon: Star, component: Providers },
@@ -33,7 +39,7 @@ function readHash() {
   return NAV.some((item) => item.id === raw) ? raw : 'overview';
 }
 
-export function App() {
+function Workspace() {
   const [active, setActive] = useState(readHash);
 
   useEffect(() => {
@@ -81,17 +87,19 @@ export function App() {
           ))}
         </nav>
 
-        <div className={`conn conn-${isSupabaseConfigured ? 'live' : 'demo'}`}>
+        <div className={`conn conn-${(isSupabaseConfigured && !isTestWorkspace()) ? 'live' : 'demo'}`}>
           <Activity size={13} aria-hidden="true" />
           <span>
-            {isSupabaseConfigured ? `Live · ${projectRef}` : 'Demo mode'}
+            {(isSupabaseConfigured && !isTestWorkspace()) ? `Live · ${projectRef}` : (isTestWorkspace() ? 'Test workspace - sample data' : 'Demo mode')}
           </span>
         </div>
       </aside>
 
       <main className="main">
-        <Page source={isSupabaseConfigured ? 'live' : 'demo'} onNavigate={navigate} />
+        <Page source={(isSupabaseConfigured && !isTestWorkspace()) ? 'live' : 'demo'} onNavigate={navigate} />
       </main>
     </div>
   );
 }
+
+export function App(){return <AdminGate><Workspace/></AdminGate>;}

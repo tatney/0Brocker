@@ -1,0 +1,4 @@
+import {expect,test} from '@playwright/test';
+test('marketplace demo explains customer evidence and keeps paid plans inactive',async({page})=>{
+ await page.goto('/#/marketplace');await expect(page.getByRole('heading',{name:'Marketplace operations'})).toBeVisible();await expect(page.getByText(/Basic owner chat stays free/)).toBeVisible();await expect(page.getByRole('heading',{name:/Free launch/})).toBeVisible();await expect(page.getByText(/No pending cases returned/)).toBeVisible();await expect(page.getByText(/No real bookings, charges/)).toBeVisible();await expect(page.getByRole('heading',{name:'Company rental-management enquiries'})).toBeVisible();await expect(page.getByRole('heading',{name:'Future plan interest'})).toBeVisible();await page.screenshot({path:'../.scratch/marketplace-preview/admin-marketplace.png',fullPage:true});
+});

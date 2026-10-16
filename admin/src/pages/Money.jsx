@@ -1,3 +1,4 @@
+import { summarizeMoney } from '../lib/metrics.js';
 import { useMemo, useState } from 'react';
 import { ArrowDownLeft, ArrowUpRight, Download, Wallet } from 'lucide-react';
 import { useResource } from '../data/useResource.js';
@@ -10,7 +11,7 @@ export function Money() {
   const totals = useMemo(() => {
     const credits = rows.filter((r) => r.is_credit);
     const debits = rows.filter((r) => !r.is_credit);
-    const sum = (list) => list.reduce((acc, r) => acc + r.amount_minor, 0);
+    const sum = (list) => list.reduce((acc, r) => acc + Math.abs(r.amount_minor), 0);
     return {
       credits: sum(credits),
       debits: sum(debits),
@@ -46,7 +47,7 @@ export function Money() {
       align: 'right',
       render: (row) => (
         <span className={row.is_credit ? 'amount-credit' : 'amount-debit'}>
-          {formatSignedMinor(row.amount_minor)}
+          {formatSignedMinor(row.is_credit ? Math.abs(row.amount_minor) : -Math.abs(row.amount_minor))}
         </span>
       ),
     },
@@ -87,7 +88,7 @@ export function Money() {
         </div>
         <div className="stat-card tone-danger">
           <div className="stat-head"><span className="stat-label">Debits out</span><span className="stat-icon"><ArrowUpRight size={16} aria-hidden="true" /></span></div>
-          <div className="stat-value amount-debit">{formatSignedMinor(totals.debits)}</div>
+          <div className="stat-value amount-debit">{formatSignedMinor(-totals.debits)}</div>
         </div>
         <div className="stat-card tone-accent">
           <div className="stat-head"><span className="stat-label">Net flow</span><span className="stat-icon"><Wallet size={16} aria-hidden="true" /></span></div>

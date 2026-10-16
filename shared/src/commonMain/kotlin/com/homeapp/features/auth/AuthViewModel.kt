@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /** Ordered steps of the sign-in / onboarding flow. */
@@ -14,6 +15,7 @@ enum class AuthStep { SIGN_IN, SIGN_UP, ONBOARDING }
 
 data class AuthUiState(
     val step: AuthStep = AuthStep.SIGN_IN,
+    val role: com.homeapp.features.marketplace.WorkspaceRole = com.homeapp.features.marketplace.WorkspaceRole.CUSTOMER,
     val email: String = "",
     val password: String = "",
     val fullName: String = "",
@@ -35,6 +37,12 @@ class AuthViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
+    fun chooseRole(role: com.homeapp.features.marketplace.WorkspaceRole) { _uiState.update {it.copy(role=role)} }
+    fun testAccount(role: String, onDone: () -> Unit) {
+        if(!com.homeapp.data.cloud.CloudRuntime.preview) return
+        _uiState.update {it.copy(email=role.lowercase()+"@test.0brocker.app",password="HomeTest!2026")}
+        signIn(onDone)
+    }
     fun onEmailChange(value: String) {
         _uiState.update { it.copy(email = value.trim(), error = null) }
     }
@@ -126,9 +134,14 @@ class AuthViewModel : ViewModel() {
         }
         _uiState.update { it.copy(isBusy = true, error = null) }
         viewModelScope.launch {
-            repo.completeOnboarding(_uiState.value.fullName.trim(), _uiState.value.avatarEmoji)
-            _uiState.update { it.copy(isBusy = false) }
-            onDone()
+            runCatching {
+                repo.completeOnboarding(_uiState.value.fullName.trim(), _uiState.value.avatarEmoji)
+                val user=(repo.observeSession().first() as? com.homeapp.data.model.AuthState.SignedIn)?.user?:error("Sign in required")
+                if(com.homeapp.data.cloud.CloudRuntime.enabled) com.homeapp.data.cloud.SupabaseGateway.write("marketplace_preferences",com.homeapp.data.cloud.json("user_id" to com.homeapp.data.cloud.SupabaseGateway.identity.value,"workspace" to _uiState.value.role.name))
+                AppContainer.workspaceRepository.selectRole(user.id,_uiState.value.role)
+            }
+                .onSuccess { _uiState.update { it.copy(isBusy=false) };onDone() }
+                .onFailure { failure->_uiState.update {it.copy(isBusy=false,error=failure.message)} }
         }
     }
 

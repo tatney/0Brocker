@@ -37,6 +37,7 @@ class TrackingViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
                         it.copy(
                             providerName = booking.providerName.ifBlank { "Provider" },
                             category = booking.serviceType,
+                            status = booking.status.name,
                         )
                     }
                 }

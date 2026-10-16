@@ -15,7 +15,10 @@ import kotlinx.coroutines.flow.stateIn
 data class PropertyFilter(
     val listingType: String? = null,   // RENT | BUY
     val assetType: String? = null,     // HOUSE | LAND | CAR
-    val category: String? = null,      // RESIDENTIAL | COMMERCIAL
+    val category: String? = null,
+    val maxPrice: Long? = null,
+    val verifiedOnly: Boolean = false,
+    val sort: String = "RECOMMENDED",      // RESIDENTIAL | COMMERCIAL
 )
 
 class PropertyViewModel : ViewModel() {
@@ -28,23 +31,23 @@ class PropertyViewModel : ViewModel() {
     private val _filter = MutableStateFlow(PropertyFilter())
     val filter: StateFlow<PropertyFilter> = _filter
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     val properties: StateFlow<List<Property>> =
-        combine(_searchQuery, _filter) { query, filter ->
-            query to filter
-        }.flatMapLatest { (query, filter) ->
-            when {
-                query.isNotBlank() -> repo.search(query)
-                else -> repo.observeByFilters(filter.listingType, filter.assetType, filter.category)
-            }
+        combine(repo.observeAll(), _searchQuery, _filter) { rows, query, filter ->
+            filterProperties(rows, query, filter)
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun onBudgetChange(value: String) { _filter.value = _filter.value.copy(maxPrice = value.toLongOrNull()) }
+    fun onVerifiedChange(value: Boolean) { _filter.value = _filter.value.copy(verifiedOnly = value) }
+    fun onSortChange(value: String) { _filter.value = _filter.value.copy(sort = value) }
+
+    fun applySearch(query: String, filter: PropertyFilter) { _searchQuery.value = query; _filter.value = filter }
 
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
     }
 
     fun onListingTypeChange(type: String?) {
-        _filter.value = PropertyFilter(listingType = toggleCurrent(_filter.value.listingType, type))
+        _filter.value = _filter.value.copy(listingType = toggleCurrent(_filter.value.listingType, type))
     }
 
     fun onAssetTypeChange(type: String?) {

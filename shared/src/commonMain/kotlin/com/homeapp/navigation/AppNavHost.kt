@@ -1,5 +1,9 @@
 package com.homeapp.navigation
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.navigation.NavType
@@ -12,6 +16,7 @@ import com.homeapp.data.AppContainer
 import com.homeapp.data.model.ServiceCategory
 import com.homeapp.features.auth.AuthFlow
 import com.homeapp.features.chat.ChatThreadScreen
+import com.homeapp.features.payments.PaymentsHubScreen
 import com.homeapp.features.payments.AddMoneyScreen
 import com.homeapp.features.payments.SendMoneyScreen
 import com.homeapp.features.payments.TransactionsScreen
@@ -38,6 +43,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
+    var requestedMainTab by rememberSaveable { mutableStateOf<String?>(null) }
     NavHost(navController = navController, startDestination = Routes.SPLASH) {
         composable(Routes.SPLASH) {
             SplashScreen(
@@ -61,18 +67,21 @@ fun AppNavHost() {
         composable(Routes.MAIN) {
             val scope = rememberCoroutineScope()
             AppShell(
+                requestedTab = requestedMainTab,
+                onTabRequestConsumed = { requestedMainTab = null },
                 onPropertyClick = { propertyId -> navController.navigate(Routes.propertyDetail(propertyId)) },
                 onSavedClick = { navController.navigate(Routes.SAVED_HOMES) },
                 onCategoryClick = { category -> navController.navigate(Routes.homeServicesMap(category.name)) },
-                onServiceClick = { serviceId -> navController.navigate(Routes.serviceDetail(serviceId)) },
-                onBookNow = { serviceId -> navController.navigate(Routes.serviceBooking(serviceId)) },
+                onServiceClick = { serviceId -> navController.navigate(Routes.providerProfile(serviceId)) },
+                onBookNow = { serviceId -> navController.navigate(Routes.requestService(serviceId)) },
+                onPayments = { navController.navigate(Routes.PAYMENTS_HUB) },
                 onAddMoney = { navController.navigate(Routes.ADD_MONEY) },
                 onSendMoney = { navController.navigate(Routes.SEND_MONEY) },
                 onViewAllTransactions = { navController.navigate(Routes.TRANSACTIONS) },
                 onHomeServices = { navController.navigate(Routes.HOME_SERVICES_MAP_ALL) },
                 onMyBookings = { navController.navigate(Routes.MY_BOOKINGS) },
                 onPostProperty = { navController.navigate(Routes.POST_PROPERTY) },
-                onPackersMovers = { navController.navigate(Routes.requestServiceSearch("Packers & Movers")) },
+                onPackersMovers = { navController.navigate(Routes.homeServicesMap(ServiceCategory.MOVING.name)) },
                 onOpenThread = { conversationId -> navController.navigate(Routes.chatThread(conversationId)) },
                 onSignOut = {
                     scope.launch {
@@ -86,7 +95,7 @@ fun AppNavHost() {
             route = Routes.PROPERTY_DETAIL,
             arguments = listOf(navArgument("propertyId") { type = NavType.LongType }),
         ) {
-            PropertyDetailScreen(onBack = { navController.navigateUp() })
+            PropertyDetailScreen(onBack = { navController.navigateUp() }, onOpenThread = { navController.navigate(Routes.chatThread(it)) })
         }
         composable(Routes.SAVED_HOMES) {
             SavedHomesScreen(
@@ -100,8 +109,12 @@ fun AppNavHost() {
                 onDone = { navController.popBackStack() },
             )
         }
+        composable(Routes.BOOKING_CONTROLS,arguments=listOf(navArgument("bookingId") {type=NavType.LongType})) { entry ->
+            val id=entry.arguments?.read {getLong("bookingId")}?:0L
+            com.homeapp.features.marketplace.CustomerBookingScreen(id,onBack={navController.navigateUp()},onReview={navController.navigate(Routes.rateProvider(id))},onRebook={navController.navigate(Routes.requestService(it))})
+        }
         composable(Routes.MY_BOOKINGS) {
-            MyBookingsScreen(onBack = { navController.navigateUp() })
+            MyBookingsScreen(onNavigateMain={tab -> requestedMainTab=tab;navController.popBackStack(Routes.MAIN,inclusive=false)},onBack = { navController.navigateUp() }, onBooking = { navController.navigate(Routes.bookingControls(it)) })
         }
         composable(
             route = Routes.SERVICES_CATEGORY,
@@ -130,6 +143,9 @@ fun AppNavHost() {
                 onDone = { navController.popBackStack(Routes.MAIN, inclusive = false) },
             )
         }
+        composable(Routes.PAYMENTS_HUB) {
+            PaymentsHubScreen(onAddMoney = { navController.navigate(Routes.ADD_MONEY) }, onSendMoney = { navController.navigate(Routes.SEND_MONEY) }, onViewAll = { navController.navigate(Routes.TRANSACTIONS) })
+        }
         composable(Routes.ADD_MONEY) {
             AddMoneyScreen(
                 onBack = { navController.navigateUp() },
@@ -152,7 +168,7 @@ fun AppNavHost() {
             ChatThreadScreen(onBack = { navController.navigateUp() })
         }
 
-        // ─── Home Services Marketplace ───
+        // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Home Services Marketplace Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
         composable(
             route = Routes.HOME_SERVICES_MAP,
             arguments = listOf(
@@ -163,8 +179,12 @@ fun AppNavHost() {
                 },
             ),
         ) { entry ->
-            val categoryName = entry.arguments?.read { getString(Routes.ARG_CATEGORY) }
+            val categoryName = entry.arguments?.read { getStringOrNull(Routes.ARG_CATEGORY) }
             ServiceMapScreen(
+                onNavigateMain = { tab ->
+                    requestedMainTab = tab
+                    navController.popBackStack(Routes.MAIN, inclusive = false)
+                },
                 onProviderClick = { providerId -> navController.navigate(Routes.providerProfile(providerId)) },
                 onRequestService = { providerId -> navController.navigate(Routes.requestService(providerId)) },
                 onBack = { navController.navigateUp() },
@@ -213,7 +233,7 @@ fun AppNavHost() {
             val bookingId = it.arguments?.read { getLong("bookingId") } ?: 0L
             ConfirmBookingScreen(
                 onBack = { navController.navigateUp() },
-                onConfirm = { navController.navigate(Routes.liveTracking(bookingId)) { popUpTo(Routes.HOME_SERVICES_MAP) } },
+                onConfirm = { navController.navigate(Routes.bookingControls(bookingId)) { popUpTo(Routes.HOME_SERVICES_MAP) } },
             )
         }
         composable(
@@ -232,10 +252,7 @@ fun AppNavHost() {
             arguments = listOf(navArgument("bookingId") { type = NavType.LongType }),
         ) {
             val bookingId = it.arguments?.read { getLong("bookingId") } ?: 0L
-            ServiceProgressScreen(
-                onBack = { navController.navigateUp() },
-                onComplete = { navController.navigate(Routes.servicePayment(bookingId)) },
-            )
+            com.homeapp.features.marketplace.CustomerBookingScreen(bookingId, onBack = { navController.navigateUp() }, onReview = { navController.navigate(Routes.rateProvider(bookingId)) }, onRebook = { providerId -> navController.navigate(Routes.requestService(providerId)) })
         }
         composable(
             route = Routes.SERVICE_PAYMENT,

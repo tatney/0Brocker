@@ -1,0 +1,117 @@
+{
+  "projectRef": "snvplaeaoxmuimtpxxpn",
+  "date": "2026-10-15",
+  "checks": [
+    {
+      "name": "CUSTOMER confirmed password sign-in",
+      "passed": true
+    },
+    {
+      "name": "CUSTOMER profile bootstrap",
+      "passed": true
+    },
+    {
+      "name": "CUSTOMER workspace persisted",
+      "passed": true
+    },
+    {
+      "name": "OWNER confirmed password sign-in",
+      "passed": true
+    },
+    {
+      "name": "OWNER profile bootstrap",
+      "passed": true
+    },
+    {
+      "name": "OWNER workspace persisted",
+      "passed": true
+    },
+    {
+      "name": "PROVIDER confirmed password sign-in",
+      "passed": true
+    },
+    {
+      "name": "PROVIDER profile bootstrap",
+      "passed": true
+    },
+    {
+      "name": "PROVIDER workspace persisted",
+      "passed": true
+    },
+    {
+      "name": "Customer cannot read owner business record",
+      "passed": true
+    },
+    {
+      "name": "Customer cannot change owner business record",
+      "passed": true
+    },
+    {
+      "name": "Owner record remains unchanged",
+      "passed": true
+    },
+    {
+      "name": "OWNER application reaches hosted review queue",
+      "passed": true
+    },
+    {
+      "name": "PROVIDER application reaches hosted review queue",
+      "passed": true
+    },
+    {
+      "name": "Customer cannot read owner verification application",
+      "passed": true
+    },
+    {
+      "name": "Pending test property cannot publish",
+      "passed": true
+    },
+    {
+      "name": "Pending test technician cannot activate",
+      "passed": true
+    },
+    {
+      "name": "Provider discovery RPC works",
+      "passed": true
+    },
+    {
+      "name": "Property discovery RPC works",
+      "passed": true
+    },
+    {
+      "name": "Notifications endpoint works",
+      "passed": true
+    },
+    {
+      "name": "Empty request photo list is scoped",
+      "passed": true
+    },
+    {
+      "name": "Request photos bucket is private",
+      "passed": true
+    },
+    {
+      "name": "Customer session refresh works",
+      "passed": true
+    }
+  ],
+  "pendingApplications": [
+    {
+      "role": "OWNER",
+      "status": "pending"
+    },
+    {
+      "role": "PROVIDER",
+      "status": "pending"
+    }
+  ],
+  "nativeAndroid": {
+    "packageId": "com.homeapp.liveqa",
+    "passwordSignIn": "passed",
+    "sessionRestoration": "passed after force-stop/relaunch",
+    "hostedWorkspace": "passed; customer preferences and notifications loaded without cloud errors",
+    "installation": "Separate package; existing com.homeapp and com.homeapp.preview preserved"
+  },
+  "credentials": "Stored only in ignored .scratch/live-test-accounts.json; not included in this report",
+  "hostedMigrations": "20260101000000, 20261012000000, 20261013000000, 20261014000000, 20261014001000"
+}

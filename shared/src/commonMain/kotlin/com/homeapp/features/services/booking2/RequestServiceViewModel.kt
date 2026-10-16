@@ -27,20 +27,29 @@ class RequestServiceViewModel(savedStateHandle: SavedStateHandle) : ViewModel() 
     private val _provider = MutableStateFlow<ServiceProvider?>(null)
     val provider: StateFlow<ServiceProvider?> = _provider.asStateFlow()
 
+    private val requestKey = savedStateHandle.get<String>("requestKey") ?: kotlin.uuid.Uuid.random().toString().also { savedStateHandle["requestKey"] = it }
+    private var createdBookingId: Long? = null
+    private var uploadedPhotos = 0
+
+    fun pickPhotos() { com.homeapp.data.cloud.ServicePhotoPicker.pick { photos, error ->
+        _uiState.update { it.copy(photos = (it.photos + photos).take(5), error = error) }
+    } }
+    fun removePhoto(index: Int) { if (createdBookingId == null) _uiState.update { it.copy(photos = it.photos.filterIndexed { i, _ -> i != index }) } }
+
     init {
         val id = providerId
         if (id != null) {
             viewModelScope.launch {
                 val p = AppContainer.marketplaceRepository.observeProviderById(id).first()
                 _provider.value = p
-                if (p != null && _uiState.value.serviceSubType.isBlank()) {
-                    _uiState.update { it.copy(serviceSubType = p.category) }
-                }
+
             }
         }
     }
 
-    fun updateDescription(value: String) = _uiState.update { it.copy(description = value.take(200)) }
+    fun acceptFee(value: Boolean) = _uiState.update { it.copy(feeAccepted = value) }
+
+    fun updateDescription(value: String) = _uiState.update { it.copy(description = value.take(2000)) }
     fun updateSubType(value: String) = _uiState.update { it.copy(serviceSubType = value) }
     fun updateLocation(value: String) = _uiState.update { it.copy(locationText = value.take(100)) }
     fun updateUrgency(value: String) = _uiState.update { it.copy(urgency = value) }
@@ -49,35 +58,54 @@ class RequestServiceViewModel(savedStateHandle: SavedStateHandle) : ViewModel() 
 
     fun submit(onCreated: (Long) -> Unit) {
         val state = _uiState.value
-        if (state.description.isBlank()) {
-            _uiState.update { it.copy(error = "Please describe the issue") }
+        if (state.isBusy) return
+        if (state.description.trim().length < 5 || state.locationText.isBlank()) {
+            _uiState.update { it.copy(error = "Describe the issue and provide a location") }
             return
         }
+        val scheduled = runCatching { bookingSchedule(state.urgency, state.scheduledDate, state.scheduledTime, currentTimeEpochSeconds()) }
+            .getOrElse { _uiState.update { it.copy(error = "Enter a valid future date (YYYY-MM-DD) and time (HH:mm), Kampala time") }; return }
+        if (_provider.value == null) { _uiState.update { it.copy(error = "No eligible technician. Independent qualification is required.") }; return }
+        if (!state.feeAccepted) { _uiState.update { it.copy(error = "Acknowledge the diagnostic fee and repair exclusions") }; return }
+        val location = com.homeapp.features.services.map.UserLocation.point.value ?: run { _uiState.update { it.copy(error = "Share your location before requesting a technician") }; return }
         _uiState.update { it.copy(isBusy = true, error = null) }
         val provider = _provider.value
         viewModelScope.launch {
             val now = currentTimeEpochSeconds()
-            val customerId = (AppContainer.authRepository.observeSession().first() as? AuthState.SignedIn)?.user?.id ?: 1
-            val bookingId = AppContainer.marketplaceRepository.createBooking(
+            val customerId = (AppContainer.authRepository.observeSession().first() as? AuthState.SignedIn)?.user?.id
+                ?: run { _uiState.update { it.copy(isBusy = false, error = "Sign in to book a service") }; return@launch }
+            val bookingId = createdBookingId ?: runCatching { AppContainer.marketplaceRepository.createBooking(
                 Booking(
                     id = 0,
                     customerId = customerId,
                     providerId = providerId ?: 0,
                     providerName = provider?.name ?: "",
                     providerEmoji = provider?.emoji ?: "",
-                    serviceType = state.serviceSubType.ifBlank { provider?.category ?: "General" },
+                    serviceType = provider?.category ?: "",
+                    workType = state.serviceSubType,
+                    requestKey = requestKey,
                     description = state.description,
                     status = BookingStatus.SEARCHING,
                     locationText = state.locationText,
-                    lat = 0.3476,
-                    lng = 32.5825,
-                    baseCost = 35000,
-                    platformFee = 2000,
-                    totalCost = 37000,
-                    scheduledAt = now,
+                    lat = location.lat,
+                    lng = location.lng,
+                    baseCost = provider?.priceFrom ?: 0,
+                    platformFee = 0,
+                    totalCost = provider?.priceFrom ?: 0,
+                    scheduledAt = if (state.urgency == "NOW") 0 else scheduled,
                     createdAtEpoch = now,
                 )
             )
+            }.getOrElse { failure -> _uiState.update { it.copy(isBusy = false, error = failure.message ?: "Booking blocked") }; return@launch }
+            createdBookingId = bookingId
+            runCatching {
+                for (photo in state.photos.drop(uploadedPhotos)) {
+                    AppContainer.marketplaceRepository.attachPhoto(bookingId, photo)
+                    uploadedPhotos++
+                }
+            }.onFailure { failure ->
+                _uiState.update { it.copy(isBusy = false, error = "Request #$bookingId saved. " + (failure.message ?: "Photo upload failed") + " Tap again to retry remaining photos.") }; return@launch
+            }
             _uiState.update { it.copy(isBusy = false) }
             onCreated(bookingId)
         }

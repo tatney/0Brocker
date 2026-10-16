@@ -4,6 +4,8 @@ object Routes {
     const val SPLASH = "splash"
     const val AUTH = "auth"
     const val MAIN = "main"
+    const val BOOKING_CONTROLS = "home-services/booking-controls/{bookingId}"
+    fun bookingControls(id: Long) = "home-services/booking-controls/$id"
 
     const val PROPERTY_DETAIL = "property/{propertyId}"
     fun propertyDetail(propertyId: Long): String = "property/$propertyId"
@@ -16,6 +18,7 @@ object Routes {
     const val SERVICE_BOOKING = "services/booking/{serviceId}"
     fun serviceBooking(serviceId: Long): String = "services/booking/$serviceId"
 
+    const val PAYMENTS_HUB = "payments"
     const val ADD_MONEY = "payments/add-money"
     const val SEND_MONEY = "payments/send-money"
     const val TRANSACTIONS = "payments/transactions"

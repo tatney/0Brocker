@@ -1,6 +1,8 @@
 package com.homeapp.features.auth
 
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -150,7 +152,7 @@ private fun SignInStep(
     onDone: () -> Unit,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(top = 48.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 32.dp),
         verticalArrangement = Arrangement.spacedBy(kSpaceLG),
     ) {
         AuthTitle(
@@ -166,7 +168,7 @@ private fun SignInStep(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = "H",
+                text = "0B",
                 fontFamily = PoppinsFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
@@ -188,18 +190,18 @@ private fun SignInStep(
             visualTransformation = PasswordVisualTransformation(),
             enabled = !state.isBusy,
         )
-        Text(
-            text = "debug internal state -> email:${state.email.length} pwd:${state.password.length}",
-            style = MaterialTheme.typography.labelSmall,
-            color = kTextSecondary,
-        )
         Spacer(Modifier.height(kSpaceSM))
         CTAButton(
             text = "Sign in",
             onClick = { viewModel.signIn(onDone) },
             enabled = state.email.isNotBlank() && state.password.length >= 6 && !state.isBusy,
         )
-        DemoHintBanner()
+        if(com.homeapp.data.cloud.CloudRuntime.preview) {
+            Text("Offline test workspace - sample data, no live approvals or money.")
+            for(role in listOf("Customer","Owner","Provider")) androidx.compose.material3.OutlinedButton(
+                onClick={viewModel.testAccount(role,onDone)},enabled=!state.isBusy,modifier=Modifier.fillMaxWidth()
+            ) {Text("Continue as test " + role.lowercase())}
+        } else if(!com.homeapp.data.cloud.CloudRuntime.enabled) DemoHintBanner()
         ToggleLink(
             prompt = "New here? ",
             action = "Create account",
@@ -215,7 +217,7 @@ private fun SignUpStep(
     onDone: () -> Unit,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(top = 48.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = 32.dp),
         verticalArrangement = Arrangement.spacedBy(kSpaceLG),
     ) {
         AuthTitle(
@@ -262,7 +264,7 @@ private fun DemoHintBanner() {
             .padding(kSpaceSM),
     ) {
         Text(
-            text = "Demo build — sign in as arjun@homeapp.in / password123",
+            text = "V1 test account: tester@0brocker.app / HomeTest!2026",
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.SemiBold,
             color = kPrimaryRed,
@@ -301,13 +303,19 @@ private fun OnboardingStep(
     onDone: () -> Unit,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(top = kSpaceXL),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = kSpaceXL),
         verticalArrangement = Arrangement.spacedBy(kSpaceLG),
     ) {
         AuthTitle(
             title = "Almost there",
             subtitle = "Tell us a little about yourself so we can personalise 0Brocker.",
         )
+        Text("Choose your starting workspace. You can switch later.")
+        Row(horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+            com.homeapp.features.marketplace.WorkspaceRole.entries.forEach {role ->
+                androidx.compose.material3.FilterChip(selected=state.role==role,enabled=!state.isBusy,onClick={viewModel.chooseRole(role)},label={Text(role.name.lowercase())})
+            }
+        }
         AuthField(
             value = state.fullName,
             onValueChange = viewModel::onNameChange,

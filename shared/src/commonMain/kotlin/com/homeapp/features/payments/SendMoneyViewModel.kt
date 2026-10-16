@@ -41,13 +41,14 @@ class SendMoneyViewModel : ViewModel() {
 
     fun onAmountChange(rupeesText: String) {
         val rupees = rupeesText.filter { it.isDigit() }.toLongOrNull() ?: 0L
-        _ui.update { it.copy(amountPaise = rupees * 100L, error = null) }
+        _ui.update { it.copy(amountPaise = if(rupees in 0..1000000000L) rupees * 100L else 0L, error = null) }
     }
 
     fun send() {
         val state = _ui.value
+        if(state.isBusy || state.isDone) return
         if (state.recipient.isBlank()) {
-            _ui.update { it.copy(error = "Enter recipient phone or UPI") }
+            _ui.update { it.copy(error = "Enter the test recipient") }
             return
         }
         if (state.amountPaise <= 0) {
@@ -61,20 +62,8 @@ class SendMoneyViewModel : ViewModel() {
         }
         _ui.update { it.copy(isBusy = true, error = null) }
         viewModelScope.launch {
-            val txId = repo.transactionsCount() + 1
-            val now = currentTimeEpochSeconds()
-            repo.insertTransaction(
-                WalletTransaction(
-                    id = txId,
-                    accountId = current.id,
-                    title = "Sent to ${state.recipient}",
-                    meta = "UPI · Payment",
-                    amountPaise = state.amountPaise,
-                    isCredit = false,
-                    createdAtEpoch = now,
-                ),
-            )
-            repo.updateBalance(current.id, current.balancePaise - state.amountPaise)
+            runCatching {repo.recordPreviewTransfer(current.id,state.amountPaise,false,"Sent to ${state.recipient}","Preview transfer")}
+              .onFailure {failure -> _ui.update{it.copy(isBusy=false,error=failure.message?:"Transfer failed")};return@launch}
             _ui.update { it.copy(isBusy = false, isDone = true) }
         }
     }

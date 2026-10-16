@@ -53,7 +53,7 @@ import com.homeapp.core.widgets.SectionHeader
 import com.homeapp.core.widgets.StarRating
 import com.homeapp.core.widgets.TagBadge
 import com.homeapp.data.model.ServiceCategory
-import com.homeapp.data.model.ServiceProfessional
+import com.homeapp.data.model.ServiceProvider
 
 /**
  * Home-services hub.
@@ -61,19 +61,19 @@ import com.homeapp.data.model.ServiceProfessional
  * The category affordance previously used a private `ServiceCategory` data class
  * that shadowed the real enum and carried only eight legacy-vocabulary entries,
  * so "Painting" was never offered at all. Categories now come straight from
- * [ServiceCategory] and render through [CategoryIconRail], which is a LazyRow —
+ * [ServiceCategory] and render through [CategoryIconRail], which is a LazyRow â€”
  * the old version nested fixed Rows inside a lazy item and could not scroll to
  * the categories that fell off the end.
  */
 @Composable
-fun ServicesHubScreen(
+fun ServicesExploreScreen(
     modifier: Modifier = Modifier,
     onCategoryClick: (ServiceCategory) -> Unit = {},
     onServiceClick: (Long) -> Unit = {},
     onBookNow: (Long) -> Unit = {},
     onMyBookings: () -> Unit = {},
     onOpenMap: () -> Unit = {},
-    viewModel: ServicesViewModel = viewModel { ServicesViewModel() },
+    viewModel: MarketplaceHubViewModel = viewModel { MarketplaceHubViewModel() },
 ) {
     val professionals by viewModel.professionals.collectAsState()
     val topProfessional = professionals.firstOrNull()
@@ -83,7 +83,7 @@ fun ServicesHubScreen(
         ?: ServiceCategory.ALL
 
     // Tapping a category opens the marketplace explore route, which arrives
-    // already filtered — the selection is no longer discarded.
+    // already filtered â€” the selection is no longer discarded.
     val openCategory: (ServiceCategory) -> Unit = { category ->
         selected = category.name
         onCategoryClick(category)
@@ -97,7 +97,7 @@ fun ServicesHubScreen(
         item {
             AppTopBar(
                 title = "Home Services",
-                subtitle = "Verified professionals, doorstep service",
+                subtitle = "Direct providers - sample profiles",
             )
         }
 
@@ -118,7 +118,7 @@ fun ServicesHubScreen(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Spacer(Modifier.height(kSpaceXS))
-                    TagBadge(text = "Find trusted local professionals", foreground = kAccentTeal)
+                    TagBadge(text = "Choose the provider yourself", foreground = kAccentTeal)
                 }
             }
         }
@@ -167,7 +167,7 @@ fun ServicesHubScreen(
                             color = kSurface,
                         )
                         Text(
-                            text = "See nearby verified professionals",
+                            text = "Compare nearby service providers",
                             style = MaterialTheme.typography.labelSmall,
                             color = kSurface.copy(alpha = 0.8f),
                         )
@@ -184,11 +184,11 @@ fun ServicesHubScreen(
 
         item {
             SectionHeader(
-                title = "Top rated professionals",
+                title = "Popular providers",
                 // This used to be a "More" action wired to an empty lambda. It is
                 // now the entry point to My Bookings, which the old tab layout
                 // reached through a dedicated tab.
-                actionLabel = "My Bookings",
+                actionLabel = "Bookings",
                 actionIcon = IconCalendar,
                 onAction = onMyBookings,
                 modifier = Modifier.padding(horizontal = AppSpacing.gutter),
@@ -224,7 +224,7 @@ fun ServicesHubScreen(
  */
 @Composable
 private fun ProfessionalRow(
-    professional: ServiceProfessional,
+    professional: ServiceProvider,
     onClick: () -> Unit,
 ) {
     Row(

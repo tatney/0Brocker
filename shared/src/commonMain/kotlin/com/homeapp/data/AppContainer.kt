@@ -20,11 +20,13 @@ object AppContainer {
 
     private val db get() = DatabaseProvider.database
 
-    val userRepository: UserRepository by lazy { UserRepositoryImpl(db) }
-    val authRepository: AuthRepository by lazy { AuthRepositoryImpl(db) }
-    val propertyRepository: PropertyRepository by lazy { PropertyRepositoryImpl(db) }
+    val userRepository: UserRepository by lazy { if (com.homeapp.data.cloud.CloudRuntime.enabled) com.homeapp.data.cloud.CloudUserRepository() else UserRepositoryImpl(db) }
+    val authRepository: AuthRepository by lazy { if (com.homeapp.data.cloud.CloudRuntime.enabled) com.homeapp.data.cloud.CloudAuthRepository(db) else AuthRepositoryImpl(db) }
+    val propertyRepository: PropertyRepository by lazy { if (com.homeapp.data.cloud.CloudRuntime.enabled) com.homeapp.data.cloud.CloudPropertyRepository() else PropertyRepositoryImpl(db) }
     val serviceRepository: ServiceRepository by lazy { ServiceRepositoryImpl(db) }
-    val walletRepository: WalletRepository by lazy { WalletRepositoryImpl(db) }
-    val chatRepository: ChatRepository by lazy { ChatRepositoryImpl(db) }
-    val marketplaceRepository: MarketplaceRepository by lazy { MarketplaceRepositoryImpl(db) }
+    val walletRepository: WalletRepository by lazy { if (com.homeapp.data.cloud.CloudRuntime.enabled) com.homeapp.data.cloud.CloudWalletRepository() else WalletRepositoryImpl(db) }
+    val chatRepository: ChatRepository by lazy { if (com.homeapp.data.cloud.CloudRuntime.enabled) com.homeapp.data.cloud.CloudChatRepository() else ChatRepositoryImpl(db) }
+    val marketplaceRepository: MarketplaceRepository by lazy { if (com.homeapp.data.cloud.CloudRuntime.enabled) com.homeapp.data.cloud.CloudMarketplaceRepository() else MarketplaceRepositoryImpl(db) }
+    val workspaceRepository by lazy { com.homeapp.data.repository.WorkspaceRepository(db) }
+    val verificationRepository by lazy { com.homeapp.data.repository.VerificationRepository(db) }
 }

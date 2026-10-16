@@ -2,6 +2,35 @@
 -- All money is stored as integer paise (paise = integer rupees * 100, fraction in paise)
 -- to avoid floating point drift. Timestamps are integer epoch seconds.
 
+CREATE TABLE verification_applications (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    jurisdiction TEXT NOT NULL,
+    credential_number TEXT NOT NULL DEFAULT '',
+    issuer TEXT NOT NULL DEFAULT '',
+    expires_on TEXT NOT NULL DEFAULT '',
+    unit_number TEXT NOT NULL DEFAULT '',
+    relationship TEXT NOT NULL DEFAULT 'individual_owner',
+    payload TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'PENDING',
+    extraction_summary TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL
+);
+
+CREATE UNIQUE INDEX verification_unique_property ON verification_applications(jurisdiction, subject, unit_number) WHERE kind = 'property' AND status NOT IN ('REJECTED', 'DUPLICATE_PENDING');
+
+verificationByUser:
+SELECT * FROM verification_applications WHERE user_id = ? ORDER BY id DESC;
+
+insertVerification:
+INSERT INTO verification_applications(user_id,kind,subject,jurisdiction,credential_number,issuer,expires_on,unit_number,relationship,payload,created_at)
+VALUES (?,?,?,?,?,?,?,?,?,?,?);
+
+saveVerificationExtraction:
+UPDATE verification_applications SET extraction_summary = ? WHERE id = ? AND user_id = ?;
+
 CREATE TABLE users (
     id INTEGER PRIMARY KEY,
     full_name TEXT NOT NULL,
@@ -196,7 +225,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?);
 
 -- ===== wallet =====
 selectPrimaryAccount:
-SELECT * FROM wallet_accounts LIMIT 1;
+SELECT * FROM wallet_accounts WHERE user_id=(SELECT user_id FROM auth_sessions WHERE is_onboarded=1 LIMIT 1) LIMIT 1;
 
 insertAccount:
 INSERT INTO wallet_accounts(id, user_id, balance_paise, currency, card_last4, card_type, card_name)
@@ -206,10 +235,10 @@ updateAccountBalance:
 UPDATE wallet_accounts SET balance_paise = ? WHERE id = ?;
 
 selectAllTransactions:
-SELECT * FROM wallet_transactions ORDER BY created_at_epoch DESC;
+SELECT * FROM wallet_transactions WHERE account_id IN (SELECT id FROM wallet_accounts WHERE user_id=(SELECT user_id FROM auth_sessions WHERE is_onboarded=1 LIMIT 1)) ORDER BY created_at_epoch DESC;
 
 recentTransactions:
-SELECT * FROM wallet_transactions ORDER BY created_at_epoch DESC LIMIT :limit;
+SELECT * FROM wallet_transactions WHERE account_id IN (SELECT id FROM wallet_accounts WHERE user_id=(SELECT user_id FROM auth_sessions WHERE is_onboarded=1 LIMIT 1)) ORDER BY created_at_epoch DESC LIMIT :limit;
 
 transactionCount:
 SELECT COUNT(*) FROM wallet_transactions;
@@ -220,6 +249,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?);
 
 -- ===== chat =====
 CREATE TABLE IF NOT EXISTS conversations (
+    local_user_id INTEGER NOT NULL DEFAULT 0,
+    local_owner_id INTEGER NOT NULL DEFAULT 0,
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     avatar_emoji TEXT NOT NULL,
@@ -302,6 +333,8 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- ===== bookings (marketplace) =====
 CREATE TABLE IF NOT EXISTS marketplace_bookings (
+    work_type TEXT NOT NULL DEFAULT 'General',
+    request_key TEXT NOT NULL DEFAULT '',
     id INTEGER PRIMARY KEY,
     customer_id INTEGER NOT NULL,
     provider_id INTEGER NOT NULL,
@@ -386,12 +419,155 @@ CREATE TABLE IF NOT EXISTS reviews (
     value_rating INTEGER NOT NULL DEFAULT 5,
     overall INTEGER NOT NULL DEFAULT 5,
     comment TEXT NOT NULL DEFAULT '',
-    created_at_epoch INTEGER NOT NULL DEFAULT 0
+    created_at_epoch INTEGER NOT NULL DEFAULT 0,
+    is_confirmed_booking INTEGER NOT NULL DEFAULT 0
 );
+CREATE UNIQUE INDEX confirmed_review_per_booking ON reviews(booking_id) WHERE is_confirmed_booking = 1;
 
 selectReviewsByProvider:
 SELECT * FROM reviews WHERE provider_id = ? ORDER BY created_at_epoch DESC;
 
 insertReview:
-INSERT INTO reviews(id, booking_id, provider_id, customer_id, quality, professionalism, timeliness, communication, value_rating, overall, comment, created_at_epoch)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO reviews(id, booking_id, provider_id, customer_id, quality, professionalism, timeliness, communication, value_rating, overall, comment, created_at_epoch, is_confirmed_booking)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1);
+CREATE TABLE property_owners (
+    property_id INTEGER NOT NULL PRIMARY KEY REFERENCES properties(id),
+    owner_id INTEGER NOT NULL,
+    owner_name TEXT NOT NULL,
+    owner_declared INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE resident_notes (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    title TEXT NOT NULL,
+    detail TEXT NOT NULL,
+    done INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE saved_searches (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    query TEXT NOT NULL,
+    listing_type TEXT,
+    asset_type TEXT,
+    category TEXT,
+    max_price INTEGER,
+    verified_only INTEGER NOT NULL DEFAULT 0,
+    sort TEXT NOT NULL
+);
+
+propertyMaxId:
+SELECT COALESCE(MAX(id), 0) FROM properties;
+userMaxId:
+SELECT COALESCE(MAX(id), 0) FROM users;
+insertPropertyOwner:
+INSERT OR REPLACE INTO property_owners VALUES (?, ?, ?, ?);
+selectPropertyOwner:
+SELECT * FROM property_owners WHERE property_id = ?;
+selectBookingPayment:
+UPDATE marketplace_bookings SET payment_method = ? WHERE id = ?;
+selectResidentNotes:
+SELECT * FROM resident_notes WHERE user_id = ? ORDER BY done, id DESC;
+insertResidentNote:
+INSERT INTO resident_notes(user_id, kind, title, detail) VALUES (?, ?, ?, ?);
+completeResidentNote:
+UPDATE resident_notes SET done = ? WHERE id = ? AND user_id = ?;
+selectSavedSearches:
+SELECT * FROM saved_searches WHERE user_id = ? ORDER BY id DESC;
+insertSavedSearch:
+INSERT INTO saved_searches(user_id, query, listing_type, asset_type, category, max_price, verified_only, sort) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+deleteSavedSearch:
+DELETE FROM saved_searches WHERE id = ? AND user_id = ?;
+
+CREATE TABLE workspace_preferences (
+ user_id INTEGER NOT NULL PRIMARY KEY, role TEXT NOT NULL DEFAULT 'CUSTOMER', available INTEGER NOT NULL DEFAULT 0, owner_contact_consent INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE business_records (
+ id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, kind TEXT NOT NULL, title TEXT NOT NULL, detail TEXT NOT NULL DEFAULT '', amount_ugx INTEGER NOT NULL DEFAULT 0, done INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL
+);
+CREATE TABLE management_enquiries (
+ id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, property_identifier TEXT NOT NULL, unit_number TEXT NOT NULL, scope TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'LOCAL_PENDING', created_at INTEGER NOT NULL
+);
+CREATE TABLE plan_interest (
+ user_id INTEGER NOT NULL, plan TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(user_id,plan)
+);
+CREATE TABLE marketplace_training_sessions (
+ user_id INTEGER NOT NULL PRIMARY KEY, payload TEXT NOT NULL
+);
+CREATE TABLE booking_customer_feedback (
+ booking_id INTEGER NOT NULL PRIMARY KEY REFERENCES marketplace_bookings(id), user_id INTEGER NOT NULL, response TEXT NOT NULL, reason TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL, arrival_epoch INTEGER NOT NULL DEFAULT 0, completion_epoch INTEGER NOT NULL DEFAULT 0
+);
+
+workspaceByUser:
+SELECT * FROM workspace_preferences WHERE user_id = ?;
+saveWorkspace:
+INSERT OR REPLACE INTO workspace_preferences VALUES (?,?,?,?);
+businessRecordsByUser:
+SELECT * FROM business_records WHERE user_id = ? ORDER BY done,id DESC;
+insertBusinessRecord:
+INSERT INTO business_records(user_id,kind,title,detail,amount_ugx,created_at) VALUES (?,?,?,?,?,?);
+completeBusinessRecord:
+UPDATE business_records SET done = ? WHERE id = ? AND user_id = ?;
+managementEnquiriesByUser:
+SELECT * FROM management_enquiries WHERE user_id = ? ORDER BY id DESC;
+insertManagementEnquiry:
+INSERT INTO management_enquiries(user_id,property_identifier,unit_number,scope,note,created_at) VALUES (?,?,?,?,?,?);
+planInterestByUser:
+SELECT * FROM plan_interest WHERE user_id = ?;
+insertPlanInterest:
+INSERT OR IGNORE INTO plan_interest VALUES (?,?,?);
+trainingByUser:
+SELECT * FROM marketplace_training_sessions WHERE user_id = ?;
+saveTraining:
+INSERT OR REPLACE INTO marketplace_training_sessions VALUES (?,?);
+customerFeedbackByBooking:
+SELECT * FROM booking_customer_feedback WHERE booking_id = ?;
+saveCustomerFeedback:
+INSERT OR REPLACE INTO booking_customer_feedback VALUES (?,?,?,?,?,?,?);
+reviewByBooking:
+SELECT * FROM reviews WHERE booking_id = ? AND is_confirmed_booking = 1;
+quoteById:
+SELECT * FROM quotes WHERE id = ?;
+reviewEligibleBooking:
+SELECT b.* FROM marketplace_bookings b JOIN booking_customer_feedback f ON f.booking_id = b.id
+WHERE b.id = ? AND b.customer_id = ? AND f.user_id = b.customer_id AND f.completion_epoch > 0;
+
+workspaceUserExists:
+SELECT COUNT(*) FROM users WHERE id = ?;
+
+CREATE TABLE booking_feedback_events (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, booking_id INTEGER NOT NULL, user_id INTEGER NOT NULL, response TEXT NOT NULL, reason TEXT NOT NULL, created_at INTEGER NOT NULL);
+insertBookingFeedbackEvent:
+INSERT INTO booking_feedback_events(booking_id,user_id,response,reason,created_at) VALUES (?,?,?,?,?);
+bookingFeedbackEvents:
+SELECT * FROM booking_feedback_events WHERE booking_id=? AND user_id=? ORDER BY id;
+CREATE TABLE service_suggestions (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,user_id INTEGER NOT NULL,name TEXT NOT NULL,description TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'LOCAL_PENDING',created_at INTEGER NOT NULL);
+insertServiceSuggestion:
+INSERT INTO service_suggestions(user_id,name,description,created_at) VALUES (?,?,?,?);
+serviceSuggestionsByUser:
+SELECT * FROM service_suggestions WHERE user_id=? ORDER BY id DESC;
+walletById:
+SELECT * FROM wallet_accounts WHERE id=?;
+nextWalletTransactionId:
+SELECT COALESCE(MAX(id),0)+1 FROM wallet_transactions;
+
+CREATE TABLE booking_photo_files (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ booking_id INTEGER NOT NULL,
+ path TEXT NOT NULL
+);
+bookingPhotoFiles:
+SELECT path FROM booking_photo_files WHERE booking_id = ?;
+insertBookingPhotoFile:
+INSERT INTO booking_photo_files(booking_id,path) VALUES (?,?);
+setConversationLocalUser:
+UPDATE conversations SET local_user_id = ?, local_owner_id = ? WHERE id = ?;
+
+CREATE UNIQUE INDEX local_request_key ON marketplace_bookings(request_key) WHERE request_key <> '';
+bookingByRequestKey:
+SELECT id FROM marketplace_bookings WHERE request_key = ? AND customer_id = ?;
+setBookingRequestDetails:
+UPDATE marketplace_bookings SET work_type = ?, request_key = ? WHERE id = ?;
+nextQuoteId:
+SELECT COALESCE(MAX(id),0)+1 FROM quotes;
+markSamplePropertyPublished:
+UPDATE verification_applications SET status = 'TEST_PUBLISHED' WHERE id = ? AND user_id = ?;

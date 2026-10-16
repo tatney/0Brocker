@@ -7,3 +7,13 @@ playwright-report
 README.md
 .env
 .env.*
+dist-test
+previews
+scripts
+improve.mjs
+moderation.mjs
+update-tests.mjs
+fix-json.mjs
+check-live.mjs
+deployment.json
+finalize.mjs

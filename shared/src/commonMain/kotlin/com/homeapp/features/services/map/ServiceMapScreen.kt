@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,6 +22,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +51,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.homeapp.core.icons.IconArrowForward
 import com.homeapp.core.icons.IconBack
 import com.homeapp.core.icons.IconList
+import com.homeapp.core.icons.IconHome
+import com.homeapp.core.icons.IconWrench
+import com.homeapp.core.icons.IconCreditCard
+import com.homeapp.core.widgets.AppBottomBarItem
+import com.homeapp.features.shell.StorefrontBottomBar
 import com.homeapp.core.icons.IconMap
 import com.homeapp.core.model.categoryIcon
 import com.homeapp.core.icons.IconSearch
@@ -71,6 +86,7 @@ import com.homeapp.core.widgets.TagBadge
 import com.homeapp.data.model.ServiceCategory
 import com.homeapp.data.model.ServiceProvider
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 
 /**
  * Provider explore: one screen with a Map mode and a Browse mode over the same
@@ -93,10 +109,13 @@ fun ServiceMapScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     initialCategory: ServiceCategory? = null,
+    onNavigateMain: (String) -> Unit = { onBack() },
     viewModel: MapViewModel = viewModel { MapViewModel() },
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val providers by viewModel.providers.collectAsState()
+    val userLocation by viewModel.userLocation.collectAsState()
+    val locationNotice by UserLocation.status.collectAsState()
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
 
@@ -105,7 +124,8 @@ fun ServiceMapScreen(
         if (initialCategory != null) viewModel.onCategorySelect(initialCategory)
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
+    Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
         if (uiState.isMapView) {
             ServiceMapCanvas(
                 providers = providers,
@@ -113,7 +133,7 @@ fun ServiceMapScreen(
                 onProviderMarkerClick = { viewModel.onProviderSelect(it) },
                 modifier = Modifier.fillMaxSize(),
                 // Was never passed before, so the location dot could not render.
-                userLocation = viewModel.userLocation,
+                userLocation = userLocation,
             )
         } else {
             BrowseProviderList(
@@ -127,12 +147,15 @@ fun ServiceMapScreen(
         }
 
         ExploreHeader(
+            locationNotice = if (userLocation == null) "$locationNotice Map preview: Kampala; this is not your location." else locationNotice,
             searchQuery = uiState.searchQuery,
             onSearchQueryChange = viewModel::onSearchQueryChange,
             selectedCategory = uiState.selectedCategory,
             onCategorySelect = viewModel::onCategorySelect,
             isMapView = uiState.isMapView,
             onToggleView = viewModel::toggleView,
+            sort = uiState.sortBy, onSort = viewModel::onSortChange,
+            availableOnly = uiState.availableOnly, onAvailable = viewModel::onAvailableChange,
             onBack = onBack,
         )
 
@@ -146,7 +169,9 @@ fun ServiceMapScreen(
             shadowElevation = 4.dp,
         ) {
             Text(
-                text = if (uiState.selectedCategory == ServiceCategory.ALL) {
+                text = if (providers.isEmpty()) {
+                    if(com.homeapp.data.cloud.CloudRuntime.enabled) "No available verified provider covers this location." else "No eligible test provider at this location."
+                } else if (uiState.selectedCategory == ServiceCategory.ALL) {
                     "${providers.size} providers nearby"
                 } else {
                     "${providers.size} ${uiState.selectedCategory.label} providers"
@@ -156,6 +181,15 @@ fun ServiceMapScreen(
                 modifier = Modifier.padding(horizontal = kSpaceMD, vertical = kSpaceSM),
             )
         }
+    }
+
+    TextButton(onClick={scope.launch {val auth=com.homeapp.data.AppContainer.authRepository.observeSession().first();val id=(auth as? com.homeapp.data.model.AuthState.SignedIn)?.user?.id;if(id!=null) com.homeapp.data.AppContainer.workspaceRepository.selectRole(id,com.homeapp.features.marketplace.WorkspaceRole.CUSTOMER);onNavigateMain("WORKSPACES")}}){Text("Suggest a missing service")}
+    StorefrontBottomBar(listOf(
+        AppBottomBarItem("0Brocker", IconHome, false) { onNavigateMain("HOME") },
+        AppBottomBarItem("Property", IconHome, false) { onNavigateMain("PROPERTY") },
+        AppBottomBarItem("Services", IconWrench, true) { onNavigateMain("SERVICES") },
+        AppBottomBarItem("Payments", IconCreditCard, false) { onNavigateMain("PAYMENTS") },
+    ))
     }
 
     // Marker / row tap selects the provider and shows the preview sheet; the
@@ -184,17 +218,22 @@ fun ServiceMapScreen(
 /** Back button, Map/Browse toggle, search field and category filter. */
 @Composable
 private fun ExploreHeader(
+    locationNotice: String,
     searchQuery: String,
     onSearchQueryChange: (String) -> Unit,
     selectedCategory: ServiceCategory,
     onCategorySelect: (ServiceCategory) -> Unit,
     isMapView: Boolean,
     onToggleView: () -> Unit,
+    sort: SortOption, onSort: (SortOption) -> Unit,
+    availableOnly: Boolean, onAvailable: (Boolean) -> Unit,
     onBack: () -> Unit,
 ) {
+    var sortOpen by remember { mutableStateOf(false) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .background(kSurface.copy(alpha = 0.96f))
             .padding(horizontal = AppSpacing.gutter, vertical = AppSpacing.item),
     ) {
         Row(
@@ -224,11 +263,17 @@ private fun ExploreHeader(
 
         Spacer(Modifier.height(AppSpacing.item))
 
-        CategoryPillRow(
-            selected = selectedCategory,
-            onSelect = onCategorySelect,
-            contentPadding = PaddingValues(horizontal = 0.dp),
-        )
+        Text(locationNotice, style = MaterialTheme.typography.labelSmall, color = kTextSecondary)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            TextButton(onClick = { UserLocation.request() }) { Text("Use my location") }
+            Box {
+                TextButton(onClick = { sortOpen = true }) { Text(sort.label) }
+                DropdownMenu(expanded = sortOpen, onDismissRequest = { sortOpen = false }) {
+                    SortOption.entries.forEach { option -> DropdownMenuItem(text = { Text(option.label) }, onClick = { onSort(option); sortOpen = false }) }
+                }
+            }
+        }
+        com.homeapp.core.widgets.ServicePicker(selectedCategory,onCategorySelect,includeAll=true)
     }
 }
 
@@ -283,8 +328,8 @@ private fun BrowseProviderList(
     if (providers.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             EmptyState(
-                title = "No providers found",
-                subtitle = "Try a different category or clear your search.",
+                title = "No eligible providers",
+                subtitle = "Share your location and choose a service. Only available qualified technicians within their service area can match.",
                 icon = IconSearch,
             )
         }
@@ -297,7 +342,7 @@ private fun BrowseProviderList(
         contentPadding = PaddingValues(
             start = AppSpacing.gutter,
             end = AppSpacing.gutter,
-            top = 190.dp,
+            top = 275.dp,
             bottom = kSpaceXL + kSpaceLG,
         ),
         verticalArrangement = Arrangement.spacedBy(AppSpacing.card),
@@ -354,7 +399,7 @@ private fun ProviderListCard(
                             Spacer(Modifier.width(kSpaceXS))
                             Icon(
                                 imageVector = IconShieldCheck,
-                                contentDescription = "Verified",
+                                contentDescription = "Sample checked profile",
                                 tint = kAccentTeal,
                                 modifier = Modifier.size(14.dp),
                             )
@@ -444,7 +489,7 @@ fun ProviderPreviewSheet(
                     )
                     if (provider.isVerified) {
                         Spacer(Modifier.width(kSpaceXS))
-                        TagBadge(text = "Verified", foreground = kAccentTeal, background = colors.container)
+                        TagBadge(text = "Sample checked", foreground = kAccentTeal, background = colors.container)
                     }
                 }
                 Spacer(Modifier.height(2.dp))
@@ -504,7 +549,7 @@ fun ProviderPreviewSheet(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
-                Text("Starting price", style = MaterialTheme.typography.labelMedium, color = kTextSecondary)
+                Text("Diagnostic visit fee", style = MaterialTheme.typography.labelMedium, color = kTextSecondary)
                 Text(
                     text = provider.formatPrice(),
                     style = MaterialTheme.typography.titleLarge,
@@ -517,6 +562,8 @@ fun ProviderPreviewSheet(
 
         Spacer(Modifier.height(kSpaceMD))
 
+        Text("Repair labour, parts and materials are excluded. Approve a separate repair quote before work begins.", style = MaterialTheme.typography.bodySmall)
+        Spacer(Modifier.height(kSpaceSM))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(kSpaceSM),

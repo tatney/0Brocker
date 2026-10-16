@@ -1,0 +1,23 @@
+CREATE TABLE workspace_preferences (
+ user_id INTEGER NOT NULL PRIMARY KEY, role TEXT NOT NULL DEFAULT 'CUSTOMER', available INTEGER NOT NULL DEFAULT 0, owner_contact_consent INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE business_records (
+ id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, kind TEXT NOT NULL, title TEXT NOT NULL, detail TEXT NOT NULL DEFAULT '', amount_ugx INTEGER NOT NULL DEFAULT 0, done INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL
+);
+CREATE TABLE management_enquiries (
+ id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, property_identifier TEXT NOT NULL, unit_number TEXT NOT NULL, scope TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'LOCAL_PENDING', created_at INTEGER NOT NULL
+);
+CREATE TABLE plan_interest (
+ user_id INTEGER NOT NULL, plan TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(user_id,plan)
+);
+CREATE TABLE marketplace_training_sessions (
+ user_id INTEGER NOT NULL PRIMARY KEY, payload TEXT NOT NULL
+);
+CREATE TABLE booking_customer_feedback (
+ booking_id INTEGER NOT NULL PRIMARY KEY REFERENCES marketplace_bookings(id), user_id INTEGER NOT NULL, response TEXT NOT NULL, reason TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL, arrival_epoch INTEGER NOT NULL DEFAULT 0, completion_epoch INTEGER NOT NULL DEFAULT 0
+);
+
+ALTER TABLE reviews ADD COLUMN is_confirmed_booking INTEGER NOT NULL DEFAULT 0;
+CREATE UNIQUE INDEX confirmed_review_per_booking ON reviews(booking_id) WHERE is_confirmed_booking = 1;
+
+CREATE TABLE booking_feedback_events (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, booking_id INTEGER NOT NULL, user_id INTEGER NOT NULL, response TEXT NOT NULL, reason TEXT NOT NULL, created_at INTEGER NOT NULL);

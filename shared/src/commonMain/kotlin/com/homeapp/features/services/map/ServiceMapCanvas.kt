@@ -60,7 +60,7 @@ import kotlin.math.roundToInt
  * so the map has to treat this much of its own height as hidden. Providers fitted
  * into the full panel would end up centred behind the search bar.
  */
-private val kHeaderOcclusion = 196.dp
+private val kHeaderOcclusion = 275.dp
 
 /**
  * Provider map: OSM raster tiles with the provider pins projected through the
@@ -87,7 +87,7 @@ fun ServiceMapCanvas(
     userLocation: GeoPoint? = null,
 ) {
     val density = LocalDensity.current
-    val points = remember(providers) { providers.map { GeoPoint(it.lat, it.lng) } }
+    val points = remember(providers) { providers.map { GeoPoint(kotlin.math.round(it.lat * 100) / 100, kotlin.math.round(it.lng * 100) / 100) } }
 
     // The user is framed along with the providers, otherwise someone standing
     // away from every provider sees a map with no reference for where they are.
@@ -119,6 +119,7 @@ fun ServiceMapCanvas(
                 existing.copy(widthPx = widthPx, heightPx = heightPx, insetTopPx = insetTopPx)
             } else {
                 MapCamera.fitting(fitPoints, widthPx, heightPx, insetTopPx = insetTopPx)
+                    ?: MapCamera(center = GeoPoint(0.3476,32.5825), zoom = 12, widthPx = widthPx, heightPx = heightPx, insetTopPx = insetTopPx)
             }
         }
         LaunchedEffect(fitKey, widthPx, heightPx, insetTopPx) {
@@ -171,7 +172,7 @@ fun ServiceMapCanvas(
             )
 
             providers.forEach { provider ->
-                val anchor = current.project(GeoPoint(provider.lat, provider.lng))
+                val anchor = current.project(GeoPoint(kotlin.math.round(provider.lat * 100) / 100, kotlin.math.round(provider.lng * 100) / 100))
                 ProviderMarker(
                     provider = provider,
                     selected = selectedProvider?.id == provider.id,
@@ -317,14 +318,14 @@ private fun ProviderMarker(
             shadowElevation = if (selected) 6.dp else 2.dp,
         ) {
             Box(
-                modifier = Modifier.size(if (selected) 38.dp else 32.dp),
+                modifier = Modifier.size(if (selected) 44.dp else 40.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = category.icon,
+                    imageVector = com.homeapp.core.icons.illustratedServiceIcon(category.name),
                     contentDescription = null,
-                    tint = if (selected) Color.White else colors.accent,
-                    modifier = Modifier.size(if (selected) 20.dp else 17.dp),
+                    tint = Color.Unspecified,
+                    modifier = Modifier.size(if (selected) 36.dp else 30.dp),
                 )
             }
         }

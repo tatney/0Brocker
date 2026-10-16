@@ -1,0 +1,23 @@
+{
+  "application": "0Brocker",
+  "versionName": "1.0.0-test.1",
+  "versionCode": 4,
+  "packageId": "com.homeapp",
+  "minimumAndroidApi": 24,
+  "signature": "Android debug signing; APK signature scheme v2 verified",
+  "file": "0Brocker-v1.0.0-test.1.apk",
+  "bytes": 16638815,
+  "sha256": "1768e1ab60c9f088590c2032f0b7afd2ba71881ceb3da0fadc10346a8bbb7c6b",
+  "sourceCommit": "88fbdc8b35ac83beeeaaf50625f92a105102d2b5",
+  "buildRun": "https://github.com/tatney/0Brocker/actions/runs/36915389197",
+  "tests": {
+    "sharedJvm": "passed",
+    "adminUnitTests": 15,
+    "adminBrowserTests": 11,
+    "androidApi29": "Installed APK; dedicated test login; five destinations; provider request and price breakdown; both booking lists; resident-note persistence across restart; no crashes"
+  },
+  "dataMode": "Offline mobile sample data and separate browser-local admin test data; no real payment or dispatch",
+  "apkUrl": "https://0brocker-admin.vercel.app/downloads/0Brocker-v1.0.0-test.1.apk",
+  "adminUrl": "https://0brocker-admin.vercel.app",
+  "packagedAt": "2026-10-01T19:43:29.764Z"
+}

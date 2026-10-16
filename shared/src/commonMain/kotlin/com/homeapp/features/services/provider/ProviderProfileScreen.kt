@@ -102,7 +102,7 @@ fun ProviderProfileScreen(
                         Text(p.name, style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
                         if (p.isVerified) {
                             Spacer(Modifier.width(kSpaceSM))
-                            TagBadge(text = "✓ Verified", foreground = kAccentTeal)
+                            TagBadge(text = "Sample profile", foreground = kAccentTeal)
                         }
                     }
                     Spacer(Modifier.height(kSpaceXS))
@@ -175,11 +175,11 @@ fun ProviderProfileScreen(
                     Text("Credentials", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Spacer(Modifier.height(kSpaceSM))
                     val credentials = listOf(
-                        "✓ National ID verified" to true,
-                        "✓ Business registered" to p.isVerified,
-                        "✓ Professional certified" to p.isVerified,
-                        "✓ Background checked" to true,
-                        "✓ Insurance" to (p.experienceYears > 3),
+                        "Identity check: not supplied" to false,
+                        "Business registration: not supplied" to false,
+                        "Professional licence: not supplied" to false,
+                        "Background check: not supplied" to false,
+                        "Insurance: not supplied" to false,
                     )
                     credentials.forEach { (text, verified) ->
                         Text(

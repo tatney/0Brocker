@@ -1,161 +1,72 @@
-import { useMemo, useState } from 'react';
-import {
-  Banknote,
-  Building2,
-  Home,
-  Star,
-  TrendingUp,
-  Users,
-  Wrench,
-} from 'lucide-react';
+﻿import { useMemo } from 'react';
+import { ArrowUpRight, Banknote, Home, ShieldCheck, Star, Users, Wrench, CircleCheck, Building2 } from 'lucide-react';
 import { useResource } from '../data/useResource.js';
-import { formatInteger, formatMinor, formatRelative, formatUgx } from '../lib/format.js';
-import { Banner, Button, DataTable, PageHeader, Rating, StatCard, StatusPill } from '../components/ui.jsx';
+import { summarizeBookings, summarizeMoney } from '../lib/metrics.js';
+import { formatInteger, formatMinor, formatRelative, formatUgx, titleCase } from '../lib/format.js';
+import { Banner, Button, DataTable, PageHeader, Rating, StatCard, StatusPill, Spinner } from '../components/ui.jsx';
 
-export function Overview({ source, onNavigate }) {
-  const { rows: properties } = useResource('properties');
-  const { rows: providers } = useResource('providers');
-  const { rows: bookings } = useResource('bookings');
-  const { rows: users } = useResource('users');
-  const { rows: transactions } = useResource('transactions');
-  const { rows: reviews } = useResource('reviews');
-
-  const stats = useMemo(() => {
-    const open = bookings.filter((b) => ['SEARCHING', 'CONFIRMED', 'IN_PROGRESS'].includes(b.status));
-    const revenue = transactions.filter((t) => t.is_credit).reduce((sum, t) => sum + t.amount_minor, 0);
-    const spend = transactions.filter((t) => !t.is_credit).reduce((sum, t) => sum + t.amount_minor, 0);
-    const avgRating = providers.length
-      ? providers.reduce((sum, p) => sum + p.rating, 0) / providers.length
-      : 0;
-    const verified = properties.filter((p) => p.is_verified).length;
-    const professionals = users.filter((u) => u.is_professional).length;
-    return { open, revenue, spend, avgRating, verified, professionals };
-  }, [bookings, transactions, providers, properties, users]);
-
-  const recent = [...bookings]
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, 6);
-
-  const topProviders = [...providers].sort((a, b) => b.jobs_completed - a.jobs_completed).slice(0, 5);
-
-  return (
-    <>
-      <PageHeader
-        title="Overview"
-        subtitle="Live operational picture across listings, providers and bookings."
-        actions={
-          <Button variant="primary" onClick={() => onNavigate('bookings')}>
-            Review queue
-          </Button>
-        }
-      />
-
-      {source === 'demo' ? (
-        <Banner tone="warn">
-          <strong>Demo data.</strong> Supabase environment variables are not set, so this workspace is
-          showing bundled sample records. Add <code>VITE_SUPABASE_URL</code> and{' '}
-          <code>VITE_SUPABASE_ANON_KEY</code> to connect the live database.
-        </Banner>
-      ) : null}
-
-      <section className="stat-grid">
-        <StatCard
-          label="Open bookings"
-          value={formatInteger(stats.open.length)}
-          hint="Awaiting assignment or in progress"
-          icon={Wrench}
-          tone="accent"
-          onClick={() => onNavigate('bookings')}
-        />
-        <StatCard
-          label="Active listings"
-          value={formatInteger(properties.length)}
-          hint={`${formatInteger(stats.verified)} verified`}
-          icon={Home}
-        />
-        <StatCard
-          label="Providers"
-          value={formatInteger(providers.length)}
-          hint={`Avg rating ${stats.avgRating.toFixed(1)}`}
-          icon={Star}
-          tone="info"
-          onClick={() => onNavigate('providers')}
-        />
-        <StatCard
-          label="Registered users"
-          value={formatInteger(users.length)}
-          hint={`${formatInteger(stats.professionals)} professionals`}
-          icon={Users}
-          onClick={() => onNavigate('people')}
-        />
-        <StatCard
-          label="Gross volume"
-          value={formatMinor(stats.revenue)}
-          hint="Credits recorded"
-          icon={Banknote}
-          tone="success"
-          onClick={() => onNavigate('money')}
-        />
-        <StatCard
-          label="Avg rating"
-          value={stats.avgRating ? stats.avgRating.toFixed(2) : '—'}
-          hint={`${formatInteger(reviews.length)} reviews collected`}
-          icon={TrendingUp}
-          tone="warn"
-        />
-      </section>
-
-      <div className="split">
-        <section className="panel">
-          <div className="panel-head">
-            <h2>Latest bookings</h2>
-            <Button onClick={() => onNavigate('bookings')}>View all</Button>
-          </div>
-          <DataTable
-            rows={recent}
-            columns={[
-              {
-                key: 'service',
-                header: 'Service',
-                render: (row) => (
-                  <span className="cell-strong">
-                    {row.provider_emoji} {row.service_type?.replace(/_/g, ' ').toLowerCase()}
-                  </span>
-                ),
-              },
-              { key: 'provider', header: 'Provider', render: (row) => row.provider_name || <span className="muted">Unassigned</span> },
-              { key: 'status', header: 'Status', render: (row) => <StatusPill status={row.status} /> },
-              { key: 'total', header: 'Total', align: 'right', render: (row) => formatUgx(row.total_cost ?? 0) },
-              { key: 'age', header: 'Age', align: 'right', render: (row) => formatRelative(row.created_at) },
-            ]}
-            empty="No bookings yet."
-          />
-        </section>
-
-        <section className="panel">
-          <div className="panel-head">
-            <h2>Busiest providers</h2>
-            <Button onClick={() => onNavigate('providers')}>View all</Button>
-          </div>
-          <DataTable
-            rows={topProviders}
-            columns={[
-              { key: 'name', header: 'Provider', render: (row) => <span className="cell-strong">{row.emoji} {row.name}</span> },
-              { key: 'category', header: 'Category', render: (row) => <span className="muted">{row.category?.replace(/_/g, ' ').toLowerCase()}</span> },
-              { key: 'jobs', header: 'Jobs', align: 'right', render: (row) => formatInteger(row.jobs_completed) },
-              { key: 'rating', header: 'Rating', align: 'right', render: (row) => <Rating value={row.rating} /> },
-            ]}
-            empty="No providers yet."
-          />
-          <div className="panel-foot">
-            <Building2 size={14} aria-hidden="true" />
-            <span>
-              Net flow {formatMinor(stats.revenue - stats.spend)} across {formatInteger(transactions.length)}{' '}
-              transactions.
-            </span>
-          </div>
-        </section>
-      </div>
-    </>
-  );
+function Bars({items,label,color='var(--brand)'}){
+ const maximum=Math.max(1,...items.map(i=>i.value));
+ return <div className="bars" role="img" aria-label={`${label}: ${items.map(i=>`${i.label}: ${i.value}`).join(', ')}`}>
+ {items.map(item=><div className="bar-row" key={item.label}><span>{item.label}</span><div className="bar-track"><div style={{width:`${item.value/maximum*100}%`,background:color}}/></div><strong>{item.value}</strong></div>)}
+ </div>;
+}
+export function Overview({source,onNavigate}){
+ const resources={properties:useResource('properties'),providers:useResource('providers'),bookings:useResource('bookings'),users:useResource('users'),transactions:useResource('transactions'),reviews:useResource('reviews')};
+ const {properties,providers,bookings,users,transactions,reviews}=Object.fromEntries(Object.entries(resources).map(([k,v])=>[k,v.rows]));
+ const errors=Object.values(resources).map(r=>r.error).filter(Boolean),loading=Object.values(resources).some(r=>r.loading);
+ const stats=useMemo(()=>{
+  const booking=summarizeBookings(bookings),wallet=summarizeMoney(transactions);
+  const verified=properties.filter(p=>p.is_verified).length,verifiedProviders=providers.filter(p=>p.is_verified).length;
+  const avgRating=reviews.length?reviews.reduce((s,r)=>s+r.overall,0)/reviews.length:0;
+  return {...booking,...wallet,verified,verifiedProviders,avgRating};
+ },[bookings,transactions,properties,providers,reviews]);
+ const recent=[...bookings].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,6);
+ const topProviders=[...providers].sort((a,b)=>b.jobs_completed-a.jobs_completed).slice(0,5);
+ const workload=[{label:'Needs a provider',value:bookings.filter(b=>b.status==='SEARCHING').length},{label:'Active service',value:stats.open.filter(b=>b.status!=='SEARCHING').length},{label:'Completed',value:stats.completed.length},{label:'Awaiting payment',value:bookings.filter(b=>b.status==='PAYMENT').length},{label:'Cancelled',value:bookings.filter(b=>b.status==='CANCELLED').length}];
+ const listingMix=['HOUSE','LAND','CAR'].map(asset=>({label:titleCase(asset),value:properties.filter(p=>p.asset_type===asset).length}));
+ return <>
+  <PageHeader title="Overview" subtitle="Your marketplace, at a glance." actions={<Button variant="primary" onClick={()=>onNavigate('bookings')}>Manage bookings <ArrowUpRight size={16}/></Button>}/>
+  {source==='demo'&&<Banner tone="warn"><strong>Demo workspace.</strong> Explore sample records and try management actions. Changes stay in this browser; no live marketplace is affected.</Banner>}
+  {errors.length>0&&<Banner tone="danger"><strong>Some data could not be loaded.</strong> {errors.join(' ')}</Banner>}
+  {loading?<Spinner label="Loading marketplace…"/>:<>
+  <section className="stat-grid">
+   <StatCard label="Open bookings" value={formatInteger(stats.open.length)} hint={`${stats.completed.length} completed · ${bookings.length} total`} icon={Wrench} tone="accent" onClick={()=>onNavigate('bookings')}/>
+   <StatCard label="Property listings" value={formatInteger(properties.length)} hint={`${stats.verified} verified listings`} icon={Home} onClick={()=>onNavigate('properties')}/>
+   <StatCard label="Service providers" value={formatInteger(providers.length)} hint={`${stats.verifiedProviders} verified professionals`} icon={ShieldCheck} tone="info" onClick={()=>onNavigate('providers')}/>
+   <StatCard label="Registered users" value={formatInteger(users.length)} hint={`${users.filter(u=>u.is_professional).length} professional accounts`} icon={Users} onClick={()=>onNavigate('people')}/>
+   <StatCard label="Wallet credits" value={formatMinor(stats.credits)} hint="Recorded inflows · not platform revenue" icon={Banknote} tone="success" onClick={()=>onNavigate('money')}/>
+   <StatCard label="Customer rating" value={reviews.length?stats.avgRating.toFixed(1):'—'} hint={`${reviews.length} submitted reviews`} icon={Star} tone="warn" onClick={()=>onNavigate('reviews')}/>
+  </section>
+  <section className="attention-strip" aria-label="Needs attention">
+   <div className="attention-title"><span className="attention-icon"><CircleCheck size={20}/></span><div><strong>Keep things moving</strong><span>Your marketplace review queue</span></div></div>
+   <button onClick={()=>onNavigate('properties')}><strong>{properties.length-stats.verified}</strong> unverified listings <ArrowUpRight size={15}/></button>
+   <button onClick={()=>onNavigate('providers')}><strong>{providers.length-stats.verifiedProviders}</strong> unverified providers <ArrowUpRight size={15}/></button>
+   <button onClick={()=>onNavigate('bookings')}><strong>{bookings.filter(b=>b.status==='SEARCHING').length}</strong> searching bookings <ArrowUpRight size={15}/></button>
+  </section>
+  <div className="chart-grid">
+   <section className="panel"><div className="panel-head"><div><h2>Booking workload</h2><p>Where your service requests stand</p></div><span className="chart-count">{bookings.length} requests</span></div><Bars items={workload} label="Booking workload"/></section>
+   <section className="panel"><div className="panel-head"><div><h2>Listing mix</h2><p>Assets available in the marketplace</p></div><Building2 size={18} className="muted"/></div><Bars items={listingMix} label="Listing mix" color="var(--accent)"/><div className="mix-footer"><span>{properties.filter(p=>p.listing_type==='RENT').length} for rent</span><span>{properties.filter(p=>p.listing_type==='BUY').length} for sale</span></div></section>
+  </div>
+  <div className="split">
+   <section className="panel"><div className="panel-head"><h2>Latest bookings</h2><Button onClick={()=>onNavigate('bookings')}>View all <ArrowUpRight size={14}/></Button></div>
+    <DataTable rows={recent} columns={[
+     {key:'service',header:'Service',render:r=><span className="cell-strong">{titleCase(r.service_type)}</span>},
+     {key:'provider',header:'Provider',render:r=>r.provider_name||<span className="muted">Unassigned</span>},
+     {key:'status',header:'Status',render:r=><StatusPill status={r.status}/>},
+     {key:'total',header:'Total',align:'right',render:r=>formatUgx(r.total_cost??0)},
+     {key:'age',header:'Created',align:'right',render:r=>formatRelative(r.created_at)},
+    ]} empty="No bookings yet."/>
+   </section>
+   <section className="panel"><div className="panel-head"><h2>Busiest providers</h2><Button onClick={()=>onNavigate('providers')}>View all <ArrowUpRight size={14}/></Button></div>
+    <DataTable rows={topProviders} columns={[
+     {key:'name',header:'Provider',render:r=><span className="cell-strong">{r.name}</span>},
+     {key:'jobs',header:'Jobs',align:'right',render:r=>formatInteger(r.jobs_completed)},
+     {key:'rating',header:'Rating',align:'right',render:r=><Rating value={r.rating}/>},
+    ]} empty="No providers yet."/>
+   </section>
+  </div>
+  <p className="overview-foot">All figures cover loaded records. Currency: UGX · Dates: East Africa Time.</p>
+  </>}
+ </>;
 }

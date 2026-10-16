@@ -1,5 +1,7 @@
 ﻿package com.homeapp.features.services.booking2
 
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -46,8 +48,10 @@ import com.homeapp.core.widgets.CTAButton
 import com.homeapp.core.widgets.TagBadge
 
 data class RequestUiState(
+    val feeAccepted: Boolean = false,
     val description: String = "",
-    val serviceSubType: String = "",
+    val photos: List<com.homeapp.data.cloud.ServicePhoto> = emptyList(),
+    val serviceSubType: String = "General",
     val locationText: String = "Kampala, Uganda",
     val urgency: String = "NOW",
     val scheduledDate: String = "",
@@ -55,11 +59,11 @@ data class RequestUiState(
     val isBusy: Boolean = false,
     val error: String? = null,
 ) {
-    val canSubmit: Boolean get() = description.isNotBlank() && !isBusy
+    val canSubmit: Boolean get() = description.trim().length >= 5 && locationText.isNotBlank() && feeAccepted && !isBusy
 }
 
-private val subTypes = listOf("Water Leak", "Pipe Repair", "Installation", "Drainage", "General", "Emergency")
-private val urgencyOptions = listOf("NOW", "Today", "Tomorrow", "Schedule")
+private val subTypes = listOf("Inspection", "Repair", "Installation", "Maintenance", "General")
+private val urgencyOptions = listOf("NOW", "Schedule")
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -76,6 +80,7 @@ fun RequestServiceScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = kSpaceMD),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -112,6 +117,11 @@ fun RequestServiceScreen(
 
             Spacer(Modifier.height(kSpaceMD))
 
+            Text("Diagnostic visit fee: ${provider?.formatPrice() ?: "No eligible quote"}. Repair labour, parts and materials are excluded; approve a separate repair quote first.", style = MaterialTheme.typography.bodySmall)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.material3.Checkbox(checked = state.feeAccepted, onCheckedChange = viewModel::acceptFee)
+                Text("I understand the diagnostic fee and repair exclusions")
+            }
             Text("What do you need help with?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(kSpaceSM))
 
@@ -143,6 +153,15 @@ fun RequestServiceScreen(
 
             Spacer(Modifier.height(kSpaceMD))
 
+            androidx.compose.material3.OutlinedButton(onClick = viewModel::pickPhotos, enabled = !state.isBusy && state.photos.size < 5) { Text("Attach photos (${state.photos.size}/5)") }
+            Text("Optional JPEG, PNG or WebP photos, up to 5 MB each.", style = MaterialTheme.typography.bodySmall)
+            state.photos.forEachIndexed { index, photo ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    coil3.compose.AsyncImage(model = photo.bytes, contentDescription = photo.name, modifier = Modifier.height(60.dp).width(60.dp))
+                    Text(photo.name, modifier = Modifier.weight(1f))
+                    androidx.compose.material3.TextButton(onClick = { viewModel.removePhoto(index) }) { Text("Remove") }
+                }
+            }
             Text("When do you need the service?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(kSpaceSM))
 
@@ -163,6 +182,14 @@ fun RequestServiceScreen(
 
             Spacer(Modifier.height(kSpaceMD))
 
+            if (state.urgency == "Schedule") {
+                OutlinedTextField(value = state.scheduledDate, onValueChange = viewModel::updateScheduledDate,
+                    label = { Text("Date (YYYY-MM-DD)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                Spacer(Modifier.height(kSpaceSM))
+                OutlinedTextField(value = state.scheduledTime, onValueChange = viewModel::updateScheduledTime,
+                    label = { Text("Time (HH:mm), Kampala") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                Spacer(Modifier.height(kSpaceMD))
+            }
             Text("Service location", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(kSpaceSM))
             OutlinedTextField(
@@ -180,10 +207,10 @@ fun RequestServiceScreen(
                 Text(it, color = kPrimaryRed, style = MaterialTheme.typography.labelMedium)
             }
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(kSpaceMD))
 
             CTAButton(
-                text = "Find Providers",
+                text = "Send service request",
                 onClick = { viewModel.submit(onSubmit) },
                 enabled = state.canSubmit,
             )
