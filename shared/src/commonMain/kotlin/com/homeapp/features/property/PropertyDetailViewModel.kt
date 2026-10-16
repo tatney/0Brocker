@@ -27,15 +27,16 @@ class PropertyDetailViewModel(
         repo.isFavorite(propertyId)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val error = kotlinx.coroutines.flow.MutableStateFlow<String?>(null)
     fun messageOwner(onOpen: (Long) -> Unit) {
         viewModelScope.launch {
             val p = property.value ?: return@launch
             val userId = (AppContainer.authRepository.observeSession().first() as? com.homeapp.data.model.AuthState.SignedIn)?.user?.id ?: return@launch
-            onOpen(AppContainer.chatRepository.openOwnerConversation(p.id, userId, p.ownerName))
+            runCatching {AppContainer.chatRepository.openOwnerConversation(p.id,userId,p.ownerName)}.onSuccess(onOpen).onFailure {error.value=it.message}
         }
     }
 
     fun onToggleFavorite() {
-        viewModelScope.launch { repo.toggleFavorite(propertyId) }
+        viewModelScope.launch {runCatching {repo.toggleFavorite(propertyId)}.onFailure {error.value=it.message}}
     }
 }

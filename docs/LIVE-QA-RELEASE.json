@@ -1,0 +1,54 @@
+{
+  "application": "0Brocker Live QA",
+  "packageId": "com.homeapp.liveqa",
+  "artifact": "apk/0Brocker-live-qa.apk",
+  "bytes": 29012303,
+  "sha256": "8c8881b4d4b83d65da21072877a89a77f2e7582bbd3c45f33830e0521feacdd6",
+  "date": "2026-10-15",
+  "projectRef": "snvplaeaoxmuimtpxxpn",
+  "dataMode": "Live Supabase; ordinary hosted test accounts; no fabricated qualifications or funds",
+  "apiAcceptance": {
+    "passed": 23,
+    "failed": 0
+  },
+  "nativeAcceptance": {
+    "packageId": "com.homeapp.liveqa",
+    "passwordSignIn": "passed",
+    "sessionRestoration": "passed after force-stop/relaunch",
+    "hostedWorkspace": "passed; customer preferences and notifications loaded without cloud errors",
+    "installation": "Separate package; existing com.homeapp and com.homeapp.preview preserved",
+    "bookingRealtime": "Hosted native event delivery and authoritative refresh passed; final APK rebuilt, installed and launched"
+  },
+  "credentials": "Ignored local .scratch/live-test-accounts.json; no passwords or secret API keys embedded",
+  "deferred": [
+    "payment processing",
+    "independent verification adapters",
+    "background push delivery",
+    "live GPS"
+  ],
+  "regression": {
+    "jvmTest": {
+      "skipped": 1,
+      "tests": 102,
+      "failures": 0
+    },
+    "testAndroidHostTest": {
+      "skipped": 0,
+      "tests": 61,
+      "failures": 0
+    }
+  },
+  "admin": {
+    "email": "rutatinafrancis@gmail.com",
+    "role": "app_metadata.role=admin",
+    "passwordSignIn": "passed",
+    "serverRoleCheck": "passed",
+    "credentials": "Ignored local .scratch/live-admin-account.json; no invitation email sent"
+  },
+  "realtime": {
+    "migration": "20261015000000_booking_realtime.sql",
+    "hostedDelivery": "Customer/admin delivery and other-owner isolation passed",
+    "fallbackPollingSeconds": 8,
+    "temporaryFixture": "removed"
+  }
+}

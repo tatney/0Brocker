@@ -72,7 +72,7 @@ fun SendMoneyScreen(
                     Icon(IconBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
                 }
                 Text(
-                    text = "Send Money",
+                    text = "Send test balance",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -98,7 +98,7 @@ fun SendMoneyScreen(
 
             Spacer(Modifier.height(kSpaceLG))
             Text(
-                text = "To (UPI ID or phone)",
+                text = "Test recipient (name or phone)",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,

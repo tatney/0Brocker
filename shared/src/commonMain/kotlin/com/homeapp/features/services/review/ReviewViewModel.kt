@@ -21,6 +21,7 @@ data class ReviewUiState(
     val comment: String = "",
     val isBusy: Boolean = false,
     val isSubmitted: Boolean = false,
+    val error: String? = null,
 )
 
 class ReviewViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
@@ -60,10 +61,10 @@ class ReviewViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
             val customerId = (AppContainer.authRepository.observeSession().first() as? AuthState.SignedIn)?.user?.id
                 ?: run { _uiState.update { it.copy(isBusy = false) }; return@launch }
             val booking = AppContainer.marketplaceRepository.observeBookingById(bookingId).first()
-            if (booking == null || booking.customerId != customerId || !booking.isPaid || booking.status == com.homeapp.data.model.BookingStatus.REVIEWED) {
-                _uiState.update { it.copy(isBusy = false) }; return@launch
+            if (booking == null || booking.customerId != customerId || booking.status == com.homeapp.data.model.BookingStatus.REVIEWED) {
+                _uiState.update { it.copy(isBusy = false, error = "This booking is unavailable or already reviewed") }; return@launch
             }
-            AppContainer.marketplaceRepository.insertReview(
+            runCatching { AppContainer.marketplaceRepository.insertReview(
                 Review(
                     id = kotlin.random.Random.nextLong(1_000_000, 9_999_999),
                     bookingId = bookingId,
@@ -79,7 +80,8 @@ class ReviewViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
                     createdAtEpoch = currentTimeEpochSeconds(),
                 )
             )
-            AppContainer.marketplaceRepository.updateBookingStatus(bookingId, com.homeapp.data.model.BookingStatus.REVIEWED)
+            if (booking.status in listOf(com.homeapp.data.model.BookingStatus.COMPLETED, com.homeapp.data.model.BookingStatus.PAYMENT)) AppContainer.marketplaceRepository.updateBookingStatus(bookingId, com.homeapp.data.model.BookingStatus.REVIEWED)
+            }.onFailure { failure -> _uiState.update { it.copy(isBusy = false, error=failure.message?:"Review blocked") }; return@launch }
             _uiState.update { it.copy(isBusy = false, isSubmitted = true) }
             onDone()
         }

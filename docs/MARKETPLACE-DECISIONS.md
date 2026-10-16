@@ -1,0 +1,15 @@
+# Marketplace implementation scope - 13 October 2026
+
+One mobile app supports Customer, Provider and Owner workspaces under one account. Switching workspaces is a UI preference, not verification or privileged access. React admin remains separate.
+
+Launch is free. Future Provider Pro, Owner Portfolio and optional House Search Pass plans are described but inactive, with prices to be confirmed. No automatic trial billing, paid qualification or paid organic-ranking boost. Existing records and booking access survive downgrades. Confirmed: basic owner chat stays free; an optional search pass may add extra tools and owner-consented calling. Owner-consented calling/contact access and AR navigation require real integrations and are not represented as working paid services.
+
+Company rental management is an optional owner enquiry for an external, separately contracted service: rent collection, tenant coordination, inspections, approved repair coordination and premises administration. No management contract, rent collection or company delivery is claimed by saving a local enquiry.
+
+Reviews follow actual booked technicians, are one per completed booking, do not depend on positive feedback or payment, and cannot confer qualification. Cancellation/dispute feedback remains available. Rebooking rechecks current qualification, availability, service area and billing eligibility. Provider business records support scheduling/reminders, client notes and draft invoices without pretending to move money or send notifications.
+
+Confirmed policy: attended-request, reserved on provider acceptance and settled after customer-confirmed arrival. The customer interface uses the confirmed attended-request policy. Illustrative fee is UGX 2,500 within the discussed UGX 2,000-3,000 range. Current launch policy waives all platform fees. The separately labelled training workflow can exercise reservations and settlement; it is not a marketplace booking, payment or qualification. Live billing activation requires deliberate server configuration and a payment adapter.
+
+Provider acceptance reserves an agreed fee when charging is enabled. Customer-confirmed arrival establishes attendance. An expiring arrival-code alternative is not implemented. Provider completion requests need customer confirmation; payment and location are not proof of satisfactory completion. Pre-arrival cancellation releases a reservation. Post-arrival cancellation preserves records and goes to review; providers cannot erase completion or customer feedback. Disputes preserve the reservation or settlement pending evidence-based review; settlement is never inferred from cancellation or silence. No automatic punitive action or positive review is inferred from silence or suspicious patterns.
+
+The first-year forecast, example subscription prices and AR idea were proposals, not deployed products or guarantees. They remain out of transactional product flows. Hosted changes are prepared for review, not deployed. Registry adapters and native Supabase authentication/sync remain production dependencies.

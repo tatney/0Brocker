@@ -15,7 +15,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.homeapp.core.icons.*
 
 @Composable
-fun ProfileScreen(onSignOut: () -> Unit, onBack: () -> Unit = {}, viewModel: ProfileViewModel = viewModel { ProfileViewModel() }, onVerification: () -> Unit = {}) {
+fun ProfileScreen(onSignOut: () -> Unit, onBack: () -> Unit = {}, viewModel: ProfileViewModel = viewModel { ProfileViewModel() }, onVerification: () -> Unit = {}, onWorkspace: () -> Unit = {}) {
     val state by viewModel.uiState.collectAsState()
     val user = state.user
     var information by rememberSaveable { mutableStateOf<String?>(null) }
@@ -38,6 +38,7 @@ fun ProfileScreen(onSignOut: () -> Unit, onBack: () -> Unit = {}, viewModel: Pro
             Text("EMAIL ADDRESS", fontSize = 13.sp, color = Color.DarkGray)
             Text(user?.email ?: "Not provided", fontSize = 15.sp)
             Spacer(Modifier.height(24.dp))
+            Button(onClick=onWorkspace,colors=ButtonDefaults.buttonColors(containerColor=rose)) {Text("Customer, provider and owner workspaces")}
             Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEAF0))) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Verification centre", fontSize = 19.sp)

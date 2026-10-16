@@ -1,0 +1,36 @@
+{
+  "application": "0Brocker",
+  "packageId": "com.homeapp.preview",
+  "artifact": "apk/0Brocker-home-preview.apk",
+  "bytes": 28979666,
+  "sha256": "2bcf16fe38693070ca36e2602a6e148b92970a8f51cada409de7d2697849867d",
+  "releaseDate": "2026-10-15",
+  "timezone": "Africa/Nairobi",
+  "uncommittedImplementation": true,
+  "tests": {
+    "sharedJvm": 96,
+    "androidHost": 61,
+    "adminUnitSecurity": 24,
+    "adminBrowser": 12,
+    "adminBuild": "passed",
+    "apkBuild": "passed"
+  },
+  "device": "Medium_Phone_API_37.0",
+  "installation": "adb install -r; existing data retained; final preview launched",
+  "database": {
+    "after": 9,
+    "roleTestAccounts": 3,
+    "sampleBookingSaved": true,
+    "requestPhotoSaved": true
+  },
+  "hostedDeployment": true,
+  "dataMode": "Separate offline role fixtures. Live Supabase backend available and API acceptance passed. Payments and external verification deferred.",
+  "guide": "docs/LIVE-MARKETPLACE.md",
+  "hostedMigrations": "All five migrations verified applied; linked dry run up to date",
+  "liveApiChecks": {
+    "passed": 23,
+    "failed": 0
+  },
+  "hostedDeploymentVerification": "All five migrations already applied; verified via linked history, dry run and live API acceptance. No migrations pushed in this continuation.",
+  "liveQaArtifact": "apk/0Brocker-live-qa.apk"
+}

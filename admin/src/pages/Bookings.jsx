@@ -29,9 +29,8 @@ export function Bookings() {
   useEffect(() => {
     if (!isSupabaseConfigured) return undefined;
     const unsubscribe = subscribeToBookings(() => {
-      setLive(true);
       reload();
-    });
+    },setLive);
     return unsubscribe;
   }, [reload]);
 
@@ -46,7 +45,8 @@ export function Bookings() {
   );
 
   const advance = async (row) => {
-    const action = row.status === 'COMPLETED' && row.is_paid ? null : NEXT_ACTION[row.status];
+    if (source === 'live') { setNotice({ tone: 'warn', text: 'Use Marketplace evidence review. Arrival and completion belong to the customer.' }); return; }
+    const action = source === 'live' || (row.status === 'COMPLETED' && row.is_paid) ? null : NEXT_ACTION[row.status];
     if (!action) return;
     setPendingId(row.id);
     setNotice(null);

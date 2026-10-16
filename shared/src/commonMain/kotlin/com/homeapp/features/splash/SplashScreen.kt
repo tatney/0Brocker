@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.first
 fun SplashScreen(onFinished: (Boolean) -> Unit) {
     LaunchedEffect(Unit) {
         delay(2200)
+        (AppContainer.authRepository as? com.homeapp.data.cloud.CloudAuthRepository)?.restore()
         val state = AppContainer.authRepository.observeSession().first()
         val signedIn = state is AuthState.SignedIn && state.isOnboarded
         onFinished(signedIn)

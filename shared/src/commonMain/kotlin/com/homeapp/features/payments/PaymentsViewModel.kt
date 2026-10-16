@@ -7,6 +7,7 @@ import com.homeapp.data.model.WalletAccount
 import com.homeapp.data.model.WalletTransaction
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
@@ -19,6 +20,7 @@ class PaymentsViewModel : ViewModel() {
 
     private val repo = AppContainer.walletRepository
 
+    init {viewModelScope.launch {repo.ensurePreviewAccount()}}
     val uiState: StateFlow<PaymentsUiState> =
         combine(
             repo.observePrimaryAccount(),

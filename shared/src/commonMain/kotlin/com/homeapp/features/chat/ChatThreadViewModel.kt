@@ -16,6 +16,8 @@ data class ChatThreadUiState(
     val conversation: ChatConversation? = null,
     val messages: List<ChatMessage> = emptyList(),
     val draft: String = "",
+    val error: String? = null,
+    val sending: Boolean = false,
 )
 
 class ChatThreadViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
@@ -43,8 +45,8 @@ class ChatThreadViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
 
     fun send() {
         val text = _ui.value.draft
-        if (text.isBlank()) return
-        _ui.update { it.copy(draft = "") }
-        viewModelScope.launch { repo.sendMessage(conversationId, text) }
+        if (text.isBlank() || _ui.value.sending) return
+        _ui.update { it.copy(sending = true,error=null) }
+        viewModelScope.launch {runCatching {repo.sendMessage(conversationId,text)}.onSuccess {_ui.update {it.copy(draft="",sending=false)}}.onFailure {e->_ui.update {it.copy(sending=false,error=e.message)}}}
     }
 }

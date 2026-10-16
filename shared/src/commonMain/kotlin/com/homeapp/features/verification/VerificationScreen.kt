@@ -18,8 +18,10 @@ import com.homeapp.data.model.ServiceCategory
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun VerificationScreen(onBack: () -> Unit, onPostProperty: () -> Unit) {
+    if(com.homeapp.data.cloud.CloudRuntime.enabled) {CloudVerificationScreen(onBack,onPostProperty);return}
     val session by AppContainer.authRepository.observeSession().collectAsState(AuthState.SignedOut)
     val userId = (session as? AuthState.SignedIn)?.user?.id ?: 0L
+    val role by remember(userId) {AppContainer.workspaceRepository.observeRole(userId)}.collectAsState(com.homeapp.features.marketplace.WorkspaceRole.CUSTOMER)
     val repo = AppContainer.verificationRepository
     val applications by remember(userId) { repo.observe(userId) }.collectAsState(emptyList())
     var credential by rememberSaveable { mutableStateOf("") }
@@ -32,29 +34,27 @@ fun VerificationScreen(onBack: () -> Unit, onPostProperty: () -> Unit) {
     Column(Modifier.fillMaxSize().background(Color(0xFFF8F6FA)).verticalScroll(rememberScrollState()).padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         TextButton(onClick = onBack) { Text("← Back", color = rose) }
         Text("Verification centre", fontSize = 26.sp)
-        Text("Register your expertise. Prove your ownership.", color = Color.DarkGray)
+        var chooseRole by remember {mutableStateOf(false)}
+        Box {OutlinedButton(onClick={chooseRole=true}){Text("Verification role: "+role.name.lowercase())};DropdownMenu(expanded=chooseRole,onDismissRequest={chooseRole=false}){listOf(com.homeapp.features.marketplace.WorkspaceRole.PROVIDER,com.homeapp.features.marketplace.WorkspaceRole.OWNER).forEach{r->DropdownMenuItem(text={Text(r.name.lowercase())},onClick={if(userId>0)AppContainer.workspaceRepository.selectRole(userId,r);chooseRole=false})}}}
+        if(role==com.homeapp.features.marketplace.WorkspaceRole.CUSTOMER) Text("Choose provider or owner to start the relevant verification.")
         Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFEEE7FA))) {
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Identity → Credentials → Independent checks → Approval", style = MaterialTheme.typography.titleMedium)
                 Text("This test app saves applications locally. They remain pending; no registry checks or online publication are claimed.", style = MaterialTheme.typography.bodySmall)
             }
         }
-        Card {
+        if(role == com.homeapp.features.marketplace.WorkspaceRole.OWNER) Card {
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Property owners", style = MaterialTheme.typography.titleLarge)
                 Text("Your official title and exact unit must match the registered owner. Broker and third-party listings are excluded.")
                 Button(onClick = onPostProperty, colors = ButtonDefaults.buttonColors(containerColor = rose)) { Text("Register my property") }
             }
         }
-        Card {
+        if(role == com.homeapp.features.marketplace.WorkspaceRole.PROVIDER) Card {
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Become a qualified provider", style = MaterialTheme.typography.titleLarge)
                 Text("Each technician requires independent checks for each service. Ratings never replace valid credentials.", style = MaterialTheme.typography.bodySmall)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    ServiceCategory.entries.filter { it != ServiceCategory.ALL }.forEach { trade ->
-                        FilterChip(selected = category == trade.name, onClick = { category = trade.name }, label = { Text(trade.label, fontSize = 11.sp) })
-                    }
-                }
+                com.homeapp.core.widgets.ServicePicker(ServiceCategory.valueOf(category),{category=it.name})
                 OutlinedTextField(value = jurisdiction, onValueChange = { jurisdiction = it.take(100) }, label = { Text("Operating country / jurisdiction") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = credential, onValueChange = { credential = it.take(160) }, label = { Text("Licence / certification number") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = issuer, onValueChange = { issuer = it.take(160) }, label = { Text("Issuing authority") }, modifier = Modifier.fillMaxWidth())
@@ -65,7 +65,7 @@ fun VerificationScreen(onBack: () -> Unit, onPostProperty: () -> Unit) {
         notice?.let { Text(it, color = rose) }
         Text("My verification applications", style = MaterialTheme.typography.titleLarge)
         if (applications.isEmpty()) Text("No applications yet.")
-        applications.forEach { application ->
+        applications.filter {when(role){com.homeapp.features.marketplace.WorkspaceRole.OWNER->it.kind=="property";com.homeapp.features.marketplace.WorkspaceRole.PROVIDER->it.kind=="provider";else->false}}.forEach { application ->
             var document by rememberSaveable(application.id) { mutableStateOf("") }
             var expanded by rememberSaveable(application.id) { mutableStateOf(false) }
             Card {

@@ -57,8 +57,8 @@ export async function verifyRecord(name,id){
   if(!['properties','providers'].includes(name))return {data:null,error:'This record cannot be verified.'};
   return {data:null,error:'One-click verification is disabled. Open Verification to review independent evidence.'};
 }
-export function subscribeToBookings(onChange){
+export function subscribeToBookings(onChange,onConnection=()=>{}){
   if((!isSupabaseConfigured || isTestWorkspace()))return ()=>{};
-  const channel=supabase.channel('admin-bookings').on('postgres_changes',{event:'*',schema:'public',table:'marketplace_bookings'},onChange).subscribe();
+  const channel=supabase.channel('admin-bookings').on('postgres_changes',{event:'*',schema:'public',table:'marketplace_bookings'},onChange).subscribe(status=>onConnection(status==='SUBSCRIBED'));
   return ()=>supabase.removeChannel(channel);
 }

@@ -53,6 +53,7 @@ fun HomeDashboardScreen(
     onResident: () -> Unit,
     onSaved: () -> Unit,
     onVerification: () -> Unit = {},
+    onWorkspace: () -> Unit = {},
 ) {
     var menuOpen by rememberSaveable { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(Color.White).verticalScroll(rememberScrollState())) {
@@ -92,6 +93,9 @@ fun HomeDashboardScreen(
             }
         }
         Column(Modifier.padding(horizontal = 10.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Surface(color=Color(0xFFEEE7FA),shape=RoundedCornerShape(14.dp),modifier=Modifier.fillMaxWidth().clickable(onClick=onWorkspace)) {
+                Column(Modifier.padding(14.dp)) {Text("My workspaces",fontWeight=FontWeight.Bold,color=Rose);Text("Customer, provider and owner tools - free during launch",fontSize=11.sp)}
+            }
             Surface(color = Color(0xFFFFEAF0), shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth().clickable(onClick = onVerification)) {
                 Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(IconShieldCheck, null, tint = Rose, modifier = Modifier.size(22.dp))

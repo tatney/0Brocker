@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -83,6 +86,7 @@ import com.homeapp.core.widgets.TagBadge
 import com.homeapp.data.model.ServiceCategory
 import com.homeapp.data.model.ServiceProvider
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 
 /**
  * Provider explore: one screen with a Map mode and a Browse mode over the same
@@ -120,7 +124,7 @@ fun ServiceMapScreen(
         if (initialCategory != null) viewModel.onCategorySelect(initialCategory)
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
     Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
         if (uiState.isMapView) {
             ServiceMapCanvas(
@@ -166,7 +170,7 @@ fun ServiceMapScreen(
         ) {
             Text(
                 text = if (providers.isEmpty()) {
-                    "No eligible match. Cloud checks are not connected."
+                    if(com.homeapp.data.cloud.CloudRuntime.enabled) "No available verified provider covers this location." else "No eligible test provider at this location."
                 } else if (uiState.selectedCategory == ServiceCategory.ALL) {
                     "${providers.size} providers nearby"
                 } else {
@@ -179,6 +183,7 @@ fun ServiceMapScreen(
         }
     }
 
+    TextButton(onClick={scope.launch {val auth=com.homeapp.data.AppContainer.authRepository.observeSession().first();val id=(auth as? com.homeapp.data.model.AuthState.SignedIn)?.user?.id;if(id!=null) com.homeapp.data.AppContainer.workspaceRepository.selectRole(id,com.homeapp.features.marketplace.WorkspaceRole.CUSTOMER);onNavigateMain("WORKSPACES")}}){Text("Suggest a missing service")}
     StorefrontBottomBar(listOf(
         AppBottomBarItem("0Brocker", IconHome, false) { onNavigateMain("HOME") },
         AppBottomBarItem("Property", IconHome, false) { onNavigateMain("PROPERTY") },
@@ -268,11 +273,7 @@ private fun ExploreHeader(
                 }
             }
         }
-        CategoryPillRow(
-            selected = selectedCategory,
-            onSelect = onCategorySelect,
-            contentPadding = PaddingValues(horizontal = 0.dp),
-        )
+        com.homeapp.core.widgets.ServicePicker(selectedCategory,onCategorySelect,includeAll=true)
     }
 }
 
@@ -328,7 +329,7 @@ private fun BrowseProviderList(
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             EmptyState(
                 title = "No eligible providers",
-                subtitle = "Share your location. Only available, independently qualified technicians in your service area can match. Cloud qualification sync is not connected in this preview.",
+                subtitle = "Share your location and choose a service. Only available qualified technicians within their service area can match.",
                 icon = IconSearch,
             )
         }

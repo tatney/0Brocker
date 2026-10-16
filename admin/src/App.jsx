@@ -20,8 +20,10 @@ import { People } from './pages/People.jsx';
 import { Money } from './pages/Money.jsx';
 import { Reviews } from './pages/Reviews.jsx';
 import { Verification } from './pages/Verification.jsx';
+import { Marketplace } from './pages/Marketplace.jsx';
 
 const NAV = [
+  { id: 'marketplace', label: 'Marketplace', icon: Wrench, component: Marketplace },
   { id: 'verification', label: 'Verification', icon: Star, component: Verification },
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, component: Overview },
   { id: 'bookings', label: 'Bookings', icon: Wrench, component: Bookings },

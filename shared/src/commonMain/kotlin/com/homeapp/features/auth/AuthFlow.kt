@@ -196,7 +196,12 @@ private fun SignInStep(
             onClick = { viewModel.signIn(onDone) },
             enabled = state.email.isNotBlank() && state.password.length >= 6 && !state.isBusy,
         )
-        DemoHintBanner()
+        if(com.homeapp.data.cloud.CloudRuntime.preview) {
+            Text("Offline test workspace - sample data, no live approvals or money.")
+            for(role in listOf("Customer","Owner","Provider")) androidx.compose.material3.OutlinedButton(
+                onClick={viewModel.testAccount(role,onDone)},enabled=!state.isBusy,modifier=Modifier.fillMaxWidth()
+            ) {Text("Continue as test " + role.lowercase())}
+        } else if(!com.homeapp.data.cloud.CloudRuntime.enabled) DemoHintBanner()
         ToggleLink(
             prompt = "New here? ",
             action = "Create account",
@@ -298,13 +303,19 @@ private fun OnboardingStep(
     onDone: () -> Unit,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(top = kSpaceXL),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(top = kSpaceXL),
         verticalArrangement = Arrangement.spacedBy(kSpaceLG),
     ) {
         AuthTitle(
             title = "Almost there",
             subtitle = "Tell us a little about yourself so we can personalise 0Brocker.",
         )
+        Text("Choose your starting workspace. You can switch later.")
+        Row(horizontalArrangement=Arrangement.spacedBy(6.dp)) {
+            com.homeapp.features.marketplace.WorkspaceRole.entries.forEach {role ->
+                androidx.compose.material3.FilterChip(selected=state.role==role,enabled=!state.isBusy,onClick={viewModel.chooseRole(role)},label={Text(role.name.lowercase())})
+            }
+        }
         AuthField(
             value = state.fullName,
             onValueChange = viewModel::onNameChange,

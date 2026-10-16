@@ -22,15 +22,16 @@ internal class ChatRepositoryImpl(
 
     override fun observeConversations(): Flow<List<ChatConversation>> =
         q.selectAllConversations().asFlow().mapToList(Dispatchers.Default).map { rows ->
-            rows.map { it.toDomain() }
+            rows.filter { (q.selectActiveSession().executeAsOneOrNull()?.user_id ?: -1L) in listOf(it.local_user_id,it.local_owner_id) }.map { it.toDomain() }
         }
 
     override fun observeConversation(id: Long): Flow<ChatConversation?> =
-        q.selectConversationById(id).asFlow().mapToOneOrNull(Dispatchers.Default).map { it?.toDomain() }
+        q.selectConversationById(id).asFlow().mapToOneOrNull(Dispatchers.Default).map { it?.takeIf {row->q.selectActiveSession().executeAsOneOrNull()?.user_id in listOf(row.local_user_id,row.local_owner_id)}?.toDomain() }
 
     override fun observeMessages(conversationId: Long): Flow<List<ChatMessage>> =
         q.selectMessagesForConversation(conversationId).asFlow().mapToList(Dispatchers.Default).map { rows ->
-            rows.map { it.toDomain() }
+            val conversation=q.selectConversationById(conversationId).executeAsOneOrNull()
+            if(q.selectActiveSession().executeAsOneOrNull()?.user_id !in listOf(conversation?.local_user_id,conversation?.local_owner_id)) emptyList() else rows.map {it.toDomain()}
         }
 
     override suspend fun openOwnerConversation(propertyId: Long, userId: Long, ownerName: String): Long {
@@ -38,21 +39,26 @@ internal class ChatRepositoryImpl(
         if (q.selectConversationById(id).executeAsOneOrNull() == null) {
             q.insertConversation(id, ownerName.ifBlank { "Owner" } + " - listing #" + propertyId, "OWNER", "Test conversation; messages stay on this device", currentTimeEpochSeconds(), 0)
         }
+        require(q.selectActiveSession().executeAsOneOrNull()?.user_id==userId) {"Sign in required"}
+        val ownerId=q.selectPropertyOwner(propertyId).executeAsOneOrNull()?.owner_id?:0
+        q.setConversationLocalUser(userId,ownerId,id)
         return id
     }
 
     override suspend fun conversationCount(): Long =
-        q.conversationCount().executeAsOne()
+        q.selectAllConversations().executeAsList().count {q.selectActiveSession().executeAsOneOrNull()?.user_id in listOf(it.local_user_id,it.local_owner_id)}.toLong()
 
     override suspend fun unreadTotal(): Long =
-        q.unreadTotal().executeAsOne()
+        0L
 
     override suspend fun sendMessage(conversationId: Long, text: String) {
+        val conversation=q.selectConversationById(conversationId).executeAsOneOrNull()
+        require(q.selectActiveSession().executeAsOneOrNull()?.user_id?.let {it in listOf(conversation?.local_user_id,conversation?.local_owner_id)} == true) {"Conversation access denied"}
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return
         val ts = currentTimeEpochSeconds()
         val nextId = q.messageMaxId().executeAsOne() + 1
-        q.insertMessage(nextId, conversationId, "me", trimmed, ts)
+        q.insertMessage(nextId, conversationId, "user:"+q.selectActiveSession().executeAsOne().user_id, trimmed, ts)
         q.updateConversationLast(trimmed, ts, conversationId)
     }
 
@@ -68,7 +74,7 @@ internal class ChatRepositoryImpl(
     private fun Messages.toDomain() = ChatMessage(
         id = id,
         conversationId = conversation_id,
-        sender = sender,
+        sender = if(sender=="user:"+q.selectActiveSession().executeAsOneOrNull()?.user_id) "me" else if(sender=="me") "sample" else sender,
         text = text,
         createdAtEpoch = created_at_epoch,
     )

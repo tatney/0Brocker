@@ -36,6 +36,9 @@ private val PayTeal = Color(0xFF36A79F)
 @Composable
 fun PaymentsStorefrontScreen(
     modifier: Modifier = Modifier,
+    walletMode: Boolean = false,
+    onCash: () -> Unit = {},
+    onPaymentsPage: () -> Unit = {},
     onAddMoney: () -> Unit = {},
     onSendMoney: () -> Unit = {},
     onViewAll: () -> Unit = {},
@@ -69,8 +72,8 @@ fun PaymentsStorefrontScreen(
                 Box(Modifier.fillMaxWidth().height(188.dp)) {
                     Box(Modifier.fillMaxWidth().height(140.dp).background(Brush.horizontalGradient(listOf(Color(0xFF333B93), PayNavy))))
                     Column(Modifier.padding(horizontal = 30.dp, vertical = 18.dp)) {
-                        Text("Payments for your home", color = Color.White, fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium)
-                        Text("START NEW PAYMENT FOR Tuition Fee", Modifier.padding(top = 10.dp), color = Color(0xFF7BE8ED), fontSize = 10.sp, lineHeight = 13.sp)
+                        Text(if(walletMode) "0Bcash wallet" else "Payments for your home", color = Color.White, fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium)
+                        Text(if(walletMode) "ADD, SEND AND TRACK YOUR TEST BALANCE" else "START NEW PAYMENT FOR Tuition Fee", Modifier.padding(top = 10.dp), color = Color(0xFF7BE8ED), fontSize = 10.sp, lineHeight = 13.sp)
                     }
                     Row(Modifier.align(Alignment.BottomCenter).padding(horizontal = 24.dp), horizontalArrangement = Arrangement.spacedBy(15.dp)) {
                         PaymentTransferTile("to Contact", Res.drawable.payment_contact, Modifier.weight(1f), onSendMoney)
@@ -80,6 +83,20 @@ fun PaymentsStorefrontScreen(
                 }
             }
             item {
+                PaymentHeading(if(walletMode) "0Bcash" else "Your Wallet", "Add Money", onAddMoney)
+                Surface(Modifier.fillMaxWidth().padding(horizontal = 24.dp), shape = RoundedCornerShape(15.dp), border = BorderStroke(1.dp, Color(0xFFE0E3F0)), color = Color.White) {
+                    Column(Modifier.padding(18.dp)) {
+                        Text("Available test balance", fontSize = 11.sp, lineHeight = 14.sp, color = Color.Gray)
+                        Text(state.account?.formatBalance() ?: "UGX 0", Modifier.padding(top = 6.dp), color = PayNavy, fontSize = 23.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
+                        Text("Sample wallet activity is stored on this device. No real money is moved.", Modifier.padding(top = 8.dp), fontSize = 10.sp, lineHeight = 14.sp, color = Color.Gray)
+                        Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) { Button(onClick = onSendMoney, colors = ButtonDefaults.buttonColors(containerColor = PayBlue)) { Text("Send", fontSize = 11.sp, lineHeight = 14.sp) }; OutlinedButton(onClick = onAddMoney) { Text("Add Money", fontSize = 11.sp, lineHeight = 14.sp) } }
+                    }
+                }
+                PaymentHeading("Recent Payments", "View All", onViewAll)
+                if (state.transactions.isEmpty()) Text("No payments yet", Modifier.padding(horizontal = 24.dp), fontSize = 12.sp, lineHeight = 16.sp, color = Color.Gray)
+                else Column(Modifier.padding(horizontal = 24.dp)) { state.transactions.take(3).forEach { transaction -> Row(Modifier.fillMaxWidth().clickable(onClick = onViewAll).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) { Icon(if (transaction.isCredit) IconDownload else IconSend, null, Modifier.size(18.dp), tint = PayBlue); Column(Modifier.weight(1f).padding(horizontal = 10.dp)) { Text(transaction.title, fontSize = 12.sp, lineHeight = 15.sp); Text(transaction.meta, fontSize = 9.sp, lineHeight = 12.sp, color = Color.Gray) }; Text(transaction.formatAmount(), fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = if (transaction.isCredit) PayTeal else PayInk) } } }
+            }
+            if(!walletMode) item {
                 PaymentHeading("Pay your expenses")
                 Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     PaymentExpenseTile("Tuition Fee", "Explore payment", Res.drawable.payment_tuition, Modifier.weight(1f).height(147.dp), true) { expense("Tuition Fee") }
@@ -110,7 +127,7 @@ fun PaymentsStorefrontScreen(
                     Spacer(Modifier.width(8.dp))
                 }
             }
-            item {
+            if(!walletMode) item {
                 PaymentHeading("Pay utility bills", "View All") { expense("Utility Bills") }
                 Column(Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(26.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -127,20 +144,6 @@ fun PaymentsStorefrontScreen(
                     }
                 }
                 Spacer(Modifier.height(20.dp))
-            }
-            item {
-                PaymentHeading("Your Wallet", "Add Money", onAddMoney)
-                Surface(Modifier.fillMaxWidth().padding(horizontal = 24.dp), shape = RoundedCornerShape(15.dp), border = BorderStroke(1.dp, Color(0xFFE0E3F0)), color = Color.White) {
-                    Column(Modifier.padding(18.dp)) {
-                        Text("Available test balance", fontSize = 11.sp, lineHeight = 14.sp, color = Color.Gray)
-                        Text(state.account?.formatBalance() ?: "UGX 0", Modifier.padding(top = 6.dp), color = PayNavy, fontSize = 23.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
-                        Text("Sample wallet activity is stored on this device. No real money is moved.", Modifier.padding(top = 8.dp), fontSize = 10.sp, lineHeight = 14.sp, color = Color.Gray)
-                        Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) { Button(onClick = onSendMoney, colors = ButtonDefaults.buttonColors(containerColor = PayBlue)) { Text("Send", fontSize = 11.sp, lineHeight = 14.sp) }; OutlinedButton(onClick = onAddMoney) { Text("Add Money", fontSize = 11.sp, lineHeight = 14.sp) } }
-                    }
-                }
-                PaymentHeading("Recent Payments", "View All", onViewAll)
-                if (state.transactions.isEmpty()) Text("No payments yet", Modifier.padding(horizontal = 24.dp), fontSize = 12.sp, lineHeight = 16.sp, color = Color.Gray)
-                else Column(Modifier.padding(horizontal = 24.dp)) { state.transactions.take(3).forEach { transaction -> Row(Modifier.fillMaxWidth().clickable(onClick = onViewAll).padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) { Icon(if (transaction.isCredit) IconDownload else IconSend, null, Modifier.size(18.dp), tint = PayBlue); Column(Modifier.weight(1f).padding(horizontal = 10.dp)) { Text(transaction.title, fontSize = 12.sp, lineHeight = 15.sp); Text(transaction.meta, fontSize = 9.sp, lineHeight = 12.sp, color = Color.Gray) }; Text(transaction.formatAmount(), fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, color = if (transaction.isCredit) PayTeal else PayInk) } } }
             }
             item {
                 PaymentHeading("Customer Review")
@@ -166,7 +169,7 @@ fun PaymentsStorefrontScreen(
                 ).forEach { (question, answer) -> PaymentFaq(question, answer) }
             }
         }
-        PaymentNavigation(onHome, {}, { expense("Instacash") }, onViewAll)
+        PaymentNavigation(onHome, onPaymentsPage, onCash, onViewAll, if(walletMode) 2 else 1)
     }
 }
 
@@ -217,9 +220,9 @@ private fun PaymentFaq(question: String, answer: String) {
 }
 
 @Composable
-private fun PaymentNavigation(onHome: () -> Unit, onPayments: () -> Unit, onCash: () -> Unit, onHistory: () -> Unit) {
-    val tabs = listOf(Triple("0Brocker", IconBack, onHome), Triple("Payments", IconCreditCard, onPayments), Triple("Instacash", IconWallet, onCash), Triple("My Payments", IconClock, onHistory))
-    Row(Modifier.fillMaxWidth().background(Color.White)) { tabs.forEachIndexed { i, (title, icon, action) -> Column(Modifier.weight(1f).height(60.dp).background(if (i == 1) Color(0xFFF0F0FD) else Color.White).selectable(i == 1, role = Role.Tab, onClick = action), horizontalAlignment = Alignment.CenterHorizontally) { Box(Modifier.fillMaxWidth().height(2.dp).background(if (i == 1) PayBlue else Color(0xFFF9F9F9))); Spacer(Modifier.height(13.dp)); Icon(icon, null, Modifier.size(14.dp), tint = if (i == 1) PayBlue else Color.Gray); Text(title, Modifier.padding(top = 6.dp), fontSize = 8.sp, lineHeight = 11.sp, color = if (i == 1) PayBlue else Color.Gray) } } }
+private fun PaymentNavigation(onHome: () -> Unit, onPayments: () -> Unit, onCash: () -> Unit, onHistory: () -> Unit, selected: Int = 1) {
+    val tabs = listOf(Triple("0Brocker", IconBack, onHome), Triple("Payments", IconCreditCard, onPayments), Triple("0Bcash", IconWallet, onCash), Triple("My Payments", IconClock, onHistory))
+    Row(Modifier.fillMaxWidth().background(Color.White)) { tabs.forEachIndexed { i, (title, icon, action) -> Column(Modifier.weight(1f).height(60.dp).background(if (i == selected) Color(0xFFF0F0FD) else Color.White).selectable(i == selected, role = Role.Tab, onClick = action), horizontalAlignment = Alignment.CenterHorizontally) { Box(Modifier.fillMaxWidth().height(2.dp).background(if (i == selected) PayBlue else Color(0xFFF9F9F9))); Spacer(Modifier.height(13.dp)); Icon(icon, null, Modifier.size(14.dp), tint = if (i == selected) PayBlue else Color.Gray); Text(title, Modifier.padding(top = 6.dp), fontSize = 8.sp, lineHeight = 11.sp, color = if (i == selected) PayBlue else Color.Gray) } } }
 }
 
 

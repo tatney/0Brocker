@@ -33,6 +33,7 @@ object DatabaseProvider {
             SeedData.seed(db)
         }
         SeedData.ensureTestAccount(db)
+        SeedData.ensureRoleTestAccounts(db)
         _database = db
     }
 }

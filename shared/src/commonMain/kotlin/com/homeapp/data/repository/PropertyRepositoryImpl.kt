@@ -108,6 +108,7 @@ internal class PropertyRepositoryImpl(
         ownerId = owner?.owner_id ?: 0,
         ownerName = owner?.owner_name ?: "",
         ownerDeclared = owner?.owner_declared == 1L,
+        ownershipValidUntil = if(com.homeapp.data.cloud.CloudRuntime.preview) currentTimeEpochSeconds()+3600 else 0,
     )
     }
 }

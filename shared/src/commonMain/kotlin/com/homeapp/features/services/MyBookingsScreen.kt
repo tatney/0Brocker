@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -68,12 +71,14 @@ class MyBookingsViewModel : ViewModel() {
 fun MyBookingsScreen(
     onBack: () -> Unit = {},
     onBooking: (Long) -> Unit = {},
+    onNavigateMain: (String)->Unit = {onBack()},
     viewModel: MyBookingsViewModel = viewModel { MyBookingsViewModel() },
 ) {
     val bookings by viewModel.bookings.collectAsState()
 
+    androidx.compose.foundation.layout.Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.weight(1f),
         contentPadding = PaddingValues(bottom = AppSpacing.screenEnd),
         verticalArrangement = Arrangement.spacedBy(AppSpacing.item),
     ) {
@@ -86,6 +91,7 @@ fun MyBookingsScreen(
                 onBack = onBack,
             )
         }
+        item {com.homeapp.features.marketplace.BookingRealtimeStatus()}
         if (bookings.isEmpty()) {
             item {
                 EmptyState(
@@ -98,6 +104,12 @@ fun MyBookingsScreen(
                 BookingRow(booking, { onBooking(booking.id) })
             }
         }
+    }
+    com.homeapp.features.shell.StorefrontBottomBar(listOf(
+      com.homeapp.core.widgets.AppBottomBarItem("0Brocker",com.homeapp.core.icons.IconHome,false){onNavigateMain("HOME")},
+      com.homeapp.core.widgets.AppBottomBarItem("Property",com.homeapp.core.icons.IconHome,false){onNavigateMain("PROPERTY")},
+      com.homeapp.core.widgets.AppBottomBarItem("Services",com.homeapp.core.icons.IconWrench,false){onNavigateMain("SERVICES")},
+      com.homeapp.core.widgets.AppBottomBarItem("Payments",com.homeapp.core.icons.IconCreditCard,false){onNavigateMain("PAYMENTS")}))
     }
 }
 

@@ -53,6 +53,8 @@ import com.homeapp.data.model.ServiceProvider
 /** The recognisable glyph that stands for this category. */
 val ServiceCategory.icon: ImageVector
     get() = when (this) {
+        ServiceCategory.CHEF -> com.homeapp.core.icons.illustratedServiceIcon("CHEF")
+        ServiceCategory.WELDING -> com.homeapp.core.icons.illustratedServiceIcon("WELDING")
         ServiceCategory.ALL -> IconTools
         ServiceCategory.CLEANING -> IconBroom
         ServiceCategory.PLUMBING -> IconWrench
@@ -97,6 +99,8 @@ val ServiceCategory.supportingIcon: ImageVector
 // ─────────────────────────────────────────────────────────────────────────────
 
 private val categoryAliases: Map<ServiceCategory, Set<String>> = mapOf(
+    ServiceCategory.CHEF to setOf("chef", "cook", "catering"),
+    ServiceCategory.WELDING to setOf("welding", "welder", "metalwork"),
     ServiceCategory.CLEANING to setOf("cleaning", "cleaner", "house cleaning", "deep cleaning", "sanitation"),
     ServiceCategory.PLUMBING to setOf("plumbing", "plumber", "plumbers"),
     ServiceCategory.ELECTRICAL to setOf("electrical", "electrician", "electricians", "wiring", "solar"),
@@ -106,9 +110,9 @@ private val categoryAliases: Map<ServiceCategory, Set<String>> = mapOf(
     ServiceCategory.CARPENTRY to setOf("carpentry", "carpenter", "woodwork", "furniture"),
     ServiceCategory.AC_REPAIR to setOf("ac repair", "ac", "air conditioning", "hvac", "cooling"),
     ServiceCategory.PEST_CONTROL to setOf("pest control", "pest", "fumigation", "termite"),
-    ServiceCategory.GARDENING to setOf("gardening", "garden", "landscaping", "lawn"),
+    ServiceCategory.GARDENING to setOf("lawn mower", "gardening", "garden", "landscaping", "lawn"),
     ServiceCategory.INTERIOR_DESIGN to setOf("interior", "interior design", "interiors"),
-    ServiceCategory.BEAUTY to setOf("beauty", "salon at home", "salon", "hair", "spa", "nails"),
+    ServiceCategory.BEAUTY to setOf("barber", "beauty", "salon at home", "salon", "hair", "spa", "nails"),
     ServiceCategory.AUTOMOTIVE to setOf("automotive", "car wash", "mechanic", "detailing", "garage"),
     ServiceCategory.APPLIANCE to setOf("appliance", "appliance repair", "appliances"),
 )

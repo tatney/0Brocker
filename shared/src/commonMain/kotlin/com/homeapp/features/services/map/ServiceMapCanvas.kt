@@ -318,14 +318,14 @@ private fun ProviderMarker(
             shadowElevation = if (selected) 6.dp else 2.dp,
         ) {
             Box(
-                modifier = Modifier.size(if (selected) 38.dp else 32.dp),
+                modifier = Modifier.size(if (selected) 44.dp else 40.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = category.icon,
+                    imageVector = com.homeapp.core.icons.illustratedServiceIcon(category.name),
                     contentDescription = null,
-                    tint = if (selected) Color.White else colors.accent,
-                    modifier = Modifier.size(if (selected) 20.dp else 17.dp),
+                    tint = Color.Unspecified,
+                    modifier = Modifier.size(if (selected) 36.dp else 30.dp),
                 )
             }
         }

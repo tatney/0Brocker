@@ -60,6 +60,7 @@ class SharedLogicDesktopTest {
     @Test
     fun walletSeededWithBalanceAndTransactions() = runBlocking {
         val db = buildRepoDb().also { SeedData.seed(it) }
+        db.homeAppDatabaseQueries.upsertSession(1,1,"","","",0,1)
         val repo: WalletRepository = WalletRepositoryImpl(db)
         val account = repo.observePrimaryAccount().first()
         assertNotNull(account)
@@ -166,6 +167,7 @@ class SharedLogicDesktopTest {
     @Test
     fun walletAddMoneyCreditsAndRaisesBalance() = runBlocking {
         val db = buildRepoDb().also { SeedData.seed(it) }
+        db.homeAppDatabaseQueries.upsertSession(1,1,"","","",0,1)
         val repo: WalletRepository = WalletRepositoryImpl(db)
         val account = repo.observePrimaryAccount().first()!!
 
@@ -196,6 +198,7 @@ class SharedLogicDesktopTest {
     @Test
     fun walletSendMoneyDebitsAndLowersBalance() = runBlocking {
         val db = buildRepoDb().also { SeedData.seed(it) }
+        db.homeAppDatabaseQueries.upsertSession(1,1,"","","",0,1)
         val repo: WalletRepository = WalletRepositoryImpl(db)
         val account = repo.observePrimaryAccount().first()!!
 

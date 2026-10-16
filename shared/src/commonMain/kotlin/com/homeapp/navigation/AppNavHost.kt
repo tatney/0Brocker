@@ -109,8 +109,12 @@ fun AppNavHost() {
                 onDone = { navController.popBackStack() },
             )
         }
+        composable(Routes.BOOKING_CONTROLS,arguments=listOf(navArgument("bookingId") {type=NavType.LongType})) { entry ->
+            val id=entry.arguments?.read {getLong("bookingId")}?:0L
+            com.homeapp.features.marketplace.CustomerBookingScreen(id,onBack={navController.navigateUp()},onReview={navController.navigate(Routes.rateProvider(id))},onRebook={navController.navigate(Routes.requestService(it))})
+        }
         composable(Routes.MY_BOOKINGS) {
-            MyBookingsScreen(onBack = { navController.navigateUp() }, onBooking = { navController.navigate(Routes.serviceProgress(it)) })
+            MyBookingsScreen(onNavigateMain={tab -> requestedMainTab=tab;navController.popBackStack(Routes.MAIN,inclusive=false)},onBack = { navController.navigateUp() }, onBooking = { navController.navigate(Routes.bookingControls(it)) })
         }
         composable(
             route = Routes.SERVICES_CATEGORY,
@@ -229,7 +233,7 @@ fun AppNavHost() {
             val bookingId = it.arguments?.read { getLong("bookingId") } ?: 0L
             ConfirmBookingScreen(
                 onBack = { navController.navigateUp() },
-                onConfirm = { navController.navigate(Routes.liveTracking(bookingId)) { popUpTo(Routes.HOME_SERVICES_MAP) } },
+                onConfirm = { navController.navigate(Routes.bookingControls(bookingId)) { popUpTo(Routes.HOME_SERVICES_MAP) } },
             )
         }
         composable(
@@ -248,10 +252,7 @@ fun AppNavHost() {
             arguments = listOf(navArgument("bookingId") { type = NavType.LongType }),
         ) {
             val bookingId = it.arguments?.read { getLong("bookingId") } ?: 0L
-            ServiceProgressScreen(
-                onBack = { navController.navigateUp() },
-                onComplete = { navController.navigate(Routes.servicePayment(bookingId)) },
-            )
+            com.homeapp.features.marketplace.CustomerBookingScreen(bookingId, onBack = { navController.navigateUp() }, onReview = { navController.navigate(Routes.rateProvider(bookingId)) }, onRebook = { providerId -> navController.navigate(Routes.requestService(providerId)) })
         }
         composable(
             route = Routes.SERVICE_PAYMENT,

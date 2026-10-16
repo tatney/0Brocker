@@ -92,6 +92,7 @@ fun ChatThreadScreen(
                 }
             }
 
+            state.error?.let {Text(it,color=MaterialTheme.colorScheme.error,modifier=Modifier.padding(kSpaceSM))}
             LazyColumn(
                 state = listState,
                 modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -124,7 +125,7 @@ fun ChatThreadScreen(
                 Spacer(Modifier.width(kSpaceSM))
                 IconButton(
                     onClick = viewModel::send,
-                    enabled = state.draft.isNotBlank(),
+                    enabled = state.draft.isNotBlank() && !state.sending,
                     modifier = Modifier
                         .clip(CircleShape)
                         .background(kPrimaryRed),

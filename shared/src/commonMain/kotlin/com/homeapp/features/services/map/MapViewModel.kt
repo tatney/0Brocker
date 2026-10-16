@@ -19,7 +19,7 @@ data class MapUiState(
     val selectedCategory: ServiceCategory = ServiceCategory.ALL,
     val selectedProvider: ServiceProvider? = null,
     val isMapView: Boolean = true,
-    val sortBy: SortOption = SortOption.RECOMMENDED,
+    val sortBy: SortOption = SortOption.NEAREST,
     val availableOnly: Boolean = true,
 )
 
@@ -44,26 +44,7 @@ class MapViewModel : ViewModel() {
             _uiState,
             userLocation,
         ) { allProviders, state, location ->
-            val enriched = if (location == null) emptyList() else allProviders.map { it.withDistanceFrom(location.lat, location.lng) }
-            val filtered = enriched.filter { provider ->
-                // Alias-based, not label equality: the database writes
-                // "Interior Design" / "Appliance Repair" where the enum says
-                // "Interior" / "Appliance", so an equality check silently
-                // returned zero providers for those categories.
-                val matchesCategory = state.selectedCategory.matches(provider.category)
-                val matchesSearch = state.searchQuery.isBlank() ||
-                    provider.name.contains(state.searchQuery, ignoreCase = true) ||
-                    provider.category.contains(state.searchQuery, ignoreCase = true) ||
-                    provider.headline.contains(state.searchQuery, ignoreCase = true)
-                matchesCategory && matchesSearch && provider.status == com.homeapp.data.model.ProviderStatus.AVAILABLE && provider.distanceKm <= provider.coverageRadiusKm && com.homeapp.features.verification.VerificationPolicy.eligible(provider, com.homeapp.core.time.currentTimeEpochSeconds())
-            }
-            when (state.sortBy) {
-                SortOption.NEAREST -> filtered.sortedBy { it.distanceKm }
-                SortOption.HIGHEST_RATED -> filtered.sortedWith(compareByDescending<ServiceProvider> { com.homeapp.features.verification.VerificationPolicy.reliableRating(it) }.thenBy { it.etaMinutes })
-                SortOption.LOWEST_PRICE -> filtered.sortedBy { it.priceFrom }
-                SortOption.FASTEST -> filtered.sortedBy { it.etaMinutes }
-                SortOption.RECOMMENDED -> filtered.sortedWith(compareByDescending<ServiceProvider> { com.homeapp.features.verification.VerificationPolicy.reliableRating(it) }.thenBy { it.etaMinutes })
-            }
+            nearbyMatches(allProviders,location,state.selectedCategory,state.searchQuery,state.sortBy,com.homeapp.core.time.currentTimeEpochSeconds())
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun onSearchQueryChange(query: String) {
@@ -87,10 +68,4 @@ class MapViewModel : ViewModel() {
     fun toggleView() {
         _uiState.update { it.copy(isMapView = !it.isMapView) }
     }
-}
-
-private fun ServiceProvider.withDistanceFrom(userLat: Double, userLng: Double): ServiceProvider {
-    val distanceKm = haversineKm(GeoPoint(userLat, userLng), GeoPoint(this.lat, this.lng))
-    val etaMinutes = (distanceKm / 30.0 * 60.0).toInt().coerceAtLeast(5)
-    return copy(distanceKm = distanceKm, etaMinutes = etaMinutes)
 }

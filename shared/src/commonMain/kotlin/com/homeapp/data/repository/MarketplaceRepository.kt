@@ -8,6 +8,9 @@ import com.homeapp.data.model.ServiceProvider
 import kotlinx.coroutines.flow.Flow
 
 interface MarketplaceRepository {
+    suspend fun attachPhoto(bookingId: Long, photo: com.homeapp.data.cloud.ServicePhoto) { error("Photo attachments require the Android app") }
+    fun observePhotos(bookingId: Long): Flow<List<String>> = kotlinx.coroutines.flow.flowOf(emptyList())
+    suspend fun providerAction(bookingId: Long, action: String, reason: String = "") { error("Live provider actions require cloud sign-in") }
     fun observeAllProviders(): Flow<List<ServiceProvider>>
     fun observeProvidersByCategory(category: String): Flow<List<ServiceProvider>>
     fun observeProviderById(id: Long): Flow<ServiceProvider?>
@@ -22,6 +25,8 @@ interface MarketplaceRepository {
     suspend fun bookingCount(): Long
     fun observeQuotesByBooking(bookingId: Long): Flow<List<Quote>>
     suspend fun insertQuote(quote: Quote)
+    suspend fun recordCustomerResponse(bookingId: Long,customerId: Long,response: String,reason: String = "")
+    suspend fun respondQuote(quoteId: Long,customerId: Long,accept: Boolean)
     suspend fun updateQuoteStatus(quoteId: Long, status: String)
     fun observeReviewsByProvider(providerId: Long): Flow<List<Review>>
     suspend fun insertReview(review: Review)

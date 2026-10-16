@@ -4,6 +4,8 @@ object Routes {
     const val SPLASH = "splash"
     const val AUTH = "auth"
     const val MAIN = "main"
+    const val BOOKING_CONTROLS = "home-services/booking-controls/{bookingId}"
+    fun bookingControls(id: Long) = "home-services/booking-controls/$id"
 
     const val PROPERTY_DETAIL = "property/{propertyId}"
     fun propertyDetail(propertyId: Long): String = "property/$propertyId"

@@ -29,9 +29,17 @@ private val LightColors = lightColorScheme(
     onBackground = kTextPrimary,
     surface = kSurface,
     onSurface = kTextPrimary,
-    surfaceVariant = kDivider,
+    surfaceVariant = kSurfaceSunken,
+    surfaceTint = kPrimaryRed,
+    surfaceBright = kSurface,
+    surfaceDim = kSurfaceSunken,
+    surfaceContainerLowest = kSurface,
+    surfaceContainerLow = kSurfaceRaised,
+    surfaceContainer = kSurfaceCard,
+    surfaceContainerHigh = kSurfaceSunken,
+    surfaceContainerHighest = kDivider,
     onSurfaceVariant = kTextSecondary,
-    outline = kDivider,
+    outline = kTextSecondary,
     outlineVariant = kDivider,
 )
 
@@ -53,7 +61,7 @@ private val DarkColors = darkColorScheme(
     onSurface = kSurface,
     surfaceVariant = kDarkSurfaceVariant,
     onSurfaceVariant = androidx.compose.ui.graphics.Color(0xFFB9BEC8),
-    outline = kDarkSurfaceVariant,
+    outline = androidx.compose.ui.graphics.Color(0xFF8D94A2),
     outlineVariant = kDarkSurfaceVariant,
 )
 

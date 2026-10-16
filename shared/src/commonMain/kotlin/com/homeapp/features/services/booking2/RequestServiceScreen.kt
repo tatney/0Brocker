@@ -50,7 +50,8 @@ import com.homeapp.core.widgets.TagBadge
 data class RequestUiState(
     val feeAccepted: Boolean = false,
     val description: String = "",
-    val serviceSubType: String = "",
+    val photos: List<com.homeapp.data.cloud.ServicePhoto> = emptyList(),
+    val serviceSubType: String = "General",
     val locationText: String = "Kampala, Uganda",
     val urgency: String = "NOW",
     val scheduledDate: String = "",
@@ -58,7 +59,7 @@ data class RequestUiState(
     val isBusy: Boolean = false,
     val error: String? = null,
 ) {
-    val canSubmit: Boolean get() = description.isNotBlank() && !isBusy
+    val canSubmit: Boolean get() = description.trim().length >= 5 && locationText.isNotBlank() && feeAccepted && !isBusy
 }
 
 private val subTypes = listOf("Inspection", "Repair", "Installation", "Maintenance", "General")
@@ -152,6 +153,15 @@ fun RequestServiceScreen(
 
             Spacer(Modifier.height(kSpaceMD))
 
+            androidx.compose.material3.OutlinedButton(onClick = viewModel::pickPhotos, enabled = !state.isBusy && state.photos.size < 5) { Text("Attach photos (${state.photos.size}/5)") }
+            Text("Optional JPEG, PNG or WebP photos, up to 5 MB each.", style = MaterialTheme.typography.bodySmall)
+            state.photos.forEachIndexed { index, photo ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    coil3.compose.AsyncImage(model = photo.bytes, contentDescription = photo.name, modifier = Modifier.height(60.dp).width(60.dp))
+                    Text(photo.name, modifier = Modifier.weight(1f))
+                    androidx.compose.material3.TextButton(onClick = { viewModel.removePhoto(index) }) { Text("Remove") }
+                }
+            }
             Text("When do you need the service?", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(kSpaceSM))
 
@@ -200,7 +210,7 @@ fun RequestServiceScreen(
             Spacer(Modifier.height(kSpaceMD))
 
             CTAButton(
-                text = "Review request",
+                text = "Send service request",
                 onClick = { viewModel.submit(onSubmit) },
                 enabled = state.canSubmit,
             )

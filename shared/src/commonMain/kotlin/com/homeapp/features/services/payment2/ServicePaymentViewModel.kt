@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 data class PaymentUiState(
     val selectedMethod: String = "Mobile Money",
     val isBusy: Boolean = false,
+    val error: String? = null,
 )
 
 class ServicePaymentViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
@@ -40,10 +41,9 @@ class ServicePaymentViewModel(savedStateHandle: SavedStateHandle) : ViewModel() 
         if (b.isPaid || _uiState.value.isBusy || b.status != com.homeapp.data.model.BookingStatus.COMPLETED) return
         _uiState.update { it.copy(isBusy = true) }
         viewModelScope.launch {
-            delay(1500)
-            AppContainer.marketplaceRepository.updateBookingPayment(bookingId, _uiState.value.selectedMethod)
-            _uiState.update { it.copy(isBusy = false) }
-            onDone()
+            runCatching {AppContainer.marketplaceRepository.updateBookingPayment(bookingId, _uiState.value.selectedMethod)}
+                .onSuccess {_uiState.update {it.copy(isBusy=false,error=null)};onDone()}
+                .onFailure {e->_uiState.update {it.copy(isBusy=false,error=e.message)}}
         }
     }
 }

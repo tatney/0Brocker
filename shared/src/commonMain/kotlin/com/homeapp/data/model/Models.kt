@@ -191,6 +191,8 @@ enum class ServiceCategory(val label: String) {
     BEAUTY("Beauty"),
     AUTOMOTIVE("Automotive"),
     APPLIANCE("Appliance"),
+    CHEF("Chef"),
+    WELDING("Welding"),
 }
 
 enum class ProviderStatus(val label: String) {
@@ -218,6 +220,8 @@ data class ServiceProvider(
     val coverageRadiusKm: Double,
     val distanceKm: Double = 0.0,
     val etaMinutes: Int = 0,
+    val distanceOriginLat: Double? = null,
+    val distanceOriginLng: Double? = null,
     val services: List<String> = emptyList(),
     // Only a current, server-authenticated approval snapshot may populate this.
     val qualificationValidUntil: Long = 0,
@@ -236,8 +240,12 @@ enum class BookingStatus(val label: String) {
     EN_ROUTE("Provider En Route"),
     ARRIVED("Provider Arrived"),
     INSPECTION("Inspection"),
+    QUOTED("Quote awaiting decision"),
     IN_PROGRESS("Service In Progress"),
     MATERIALS_REQUIRED("Materials Required"),
+    AWAITING_CONFIRMATION("Awaiting customer confirmation"),
+    REVIEW_REQUIRED("Cancellation under review"),
+    DISPUTED("Disputed"),
     COMPLETED("Service Completed"),
     PAYMENT("Payment"),
     REVIEWED("Reviewed"),
@@ -252,6 +260,8 @@ data class Booking(
     val providerEmoji: String = "",
     val serviceType: String,
     val description: String = "",
+    val workType: String = "General",
+    val requestKey: String = "",
     val status: BookingStatus = BookingStatus.SEARCHING,
     val locationText: String = "",
     val lat: Double = 0.0,

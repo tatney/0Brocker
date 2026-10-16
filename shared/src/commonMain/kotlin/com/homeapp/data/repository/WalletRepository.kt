@@ -5,6 +5,8 @@ import com.homeapp.data.model.WalletTransaction
 import kotlinx.coroutines.flow.Flow
 
 interface WalletRepository {
+    suspend fun ensurePreviewAccount()
+    suspend fun recordPreviewTransfer(accountId: Long,amount: Long,isCredit: Boolean,title: String,meta: String)
     fun observePrimaryAccount(): Flow<WalletAccount?>
     suspend fun insertAccount(account: WalletAccount)
     suspend fun updateBalance(accountId: Long, balancePaise: Long)

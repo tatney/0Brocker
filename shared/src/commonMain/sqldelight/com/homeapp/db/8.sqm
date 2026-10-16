@@ -1,0 +1,12 @@
+CREATE TABLE booking_photo_files (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ booking_id INTEGER NOT NULL,
+ path TEXT NOT NULL
+);
+ALTER TABLE conversations ADD COLUMN local_user_id INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE conversations ADD COLUMN local_owner_id INTEGER NOT NULL DEFAULT 0;
+
+ALTER TABLE marketplace_bookings ADD COLUMN work_type TEXT NOT NULL DEFAULT 'General';
+ALTER TABLE marketplace_bookings ADD COLUMN request_key TEXT NOT NULL DEFAULT '';
+CREATE UNIQUE INDEX local_request_key ON marketplace_bookings(request_key) WHERE request_key <> '';

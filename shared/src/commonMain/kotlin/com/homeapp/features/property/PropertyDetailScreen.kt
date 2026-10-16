@@ -74,10 +74,12 @@ fun PropertyDetailScreen(
 ) {
     val property by viewModel.property.collectAsState()
     val saved by viewModel.isSaved.collectAsState()
+    val error by viewModel.error.collectAsState()
+    error?.let { message -> AlertDialog(onDismissRequest={viewModel.error.value=null},title={Text("Unable to complete action")},text={Text(message)},confirmButton={TextButton(onClick={viewModel.error.value=null}){Text("Close")}}) }
     var showContact by remember { mutableStateOf(false) }
     if (showContact) AlertDialog(onDismissRequest = { showContact = false }, title = { Text("Direct owner contact") },
-        text = { Text("No owner phone number has been supplied. You can test a direct conversation on this device; messages are not delivered to a real owner in v1.") },
-        confirmButton = { TextButton(onClick = { showContact = false; viewModel.messageOwner(onOpenThread) }) { Text("Test conversation") } },
+        text = { Text(if(com.homeapp.data.cloud.CloudRuntime.enabled) "Send a direct enquiry to this listing?s owner. Calling is not connected." else "This is an offline test conversation between the sample customer and owner accounts.") },
+        confirmButton = { TextButton(onClick = { showContact = false; viewModel.messageOwner(onOpenThread) }) { Text(if(com.homeapp.data.cloud.CloudRuntime.enabled) "Message owner" else "Test conversation") } },
         dismissButton = { TextButton(onClick = { showContact = false }) { Text("Close") } })
 
     Scaffold(

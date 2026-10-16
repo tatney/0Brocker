@@ -49,6 +49,9 @@ private enum class ShellTab(val label: String, val icon: ImageVector) {
     CHAT("Chat", IconChat),
     PROFILE("Profile", IconPerson),
     VERIFICATION("Verification", IconPerson),
+    WORKSPACES("Workspaces", IconPerson),
+    BOOKING_RULES("Booking rules", IconWrench),
+    PLANS("Plans", IconCreditCard),
 }
 
 @Composable
@@ -101,8 +104,8 @@ fun AppShell(
             "payments" -> tabName = ShellTab.PAYMENTS.name
             "profile" -> tabName = ShellTab.PROFILE.name
             "chat" -> tabName = ShellTab.CHAT.name
-            "plans" -> planInfo = "Residential Plans"
-            "commercialPlans" -> planInfo = "Commercial Plans"
+            "plans" -> tabName = ShellTab.PLANS.name
+            "commercialPlans" -> tabName = ShellTab.PLANS.name
         }
     })
     CompositionLocalProvider(LocalOpenStorefrontMenu provides { menuOpen = true }, LocalOpenRewardsWallet provides { tabName = ShellTab.WALLET.name }) {
@@ -111,7 +114,7 @@ fun AppShell(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             if (tab != ShellTab.WALLET && tab != ShellTab.CHAT && tab != ShellTab.PROFILE && tab != ShellTab.PROPERTY && tab != ShellTab.SERVICES && tab != ShellTab.PAYMENTS) StorefrontBottomBar(
-                items = ShellTab.entries.filter { it != ShellTab.WALLET && it != ShellTab.CHAT && it != ShellTab.PROFILE && it != ShellTab.RESIDENT && it != ShellTab.VERIFICATION }.map { candidate ->
+                items = ShellTab.entries.filter { it != ShellTab.WALLET && it != ShellTab.CHAT && it != ShellTab.PROFILE && it != ShellTab.RESIDENT && it != ShellTab.VERIFICATION && it != ShellTab.WORKSPACES && it != ShellTab.BOOKING_RULES && it != ShellTab.PLANS }.map { candidate ->
                     AppBottomBarItem(
                         label = candidate.label,
                         icon = candidate.icon,
@@ -145,6 +148,7 @@ fun AppShell(
                         onProfile = { tabName = ShellTab.PROFILE.name },
                         onResident = { tabName = ShellTab.RESIDENT.name },
                         onSaved = onSavedClick,
+                        onWorkspace = { tabName = ShellTab.WORKSPACES.name },
                         onVerification = { tabName = ShellTab.VERIFICATION.name },
                     )
 
@@ -178,6 +182,8 @@ fun AppShell(
                     )
 
                     ShellTab.PAYMENTS -> PaymentsStorefrontScreen(
+                        onCash = {tabName=ShellTab.WALLET.name},
+                        onPaymentsPage = {tabName=ShellTab.PAYMENTS.name},
                         onHome = { tabName = ShellTab.HOME.name },
                         onProperty = { tabName = ShellTab.PROPERTY.name },
                         onServices = { tabName = ShellTab.SERVICES.name },
@@ -197,8 +203,11 @@ fun AppShell(
 
                     ShellTab.CHAT -> ChatListScreen(onOpenThread = onOpenThread, onBack = { tabName = ShellTab.HOME.name })
 
-                    ShellTab.WALLET -> RewardsWalletScreen(onBack = { tabName = ShellTab.HOME.name }, onAddMoney = onAddMoney, onTransactions = onViewAllTransactions)
-                    ShellTab.PROFILE -> ProfileScreen(onSignOut = onSignOut, onBack = { tabName = ShellTab.HOME.name }, onVerification = { tabName = ShellTab.VERIFICATION.name })
+                    ShellTab.WALLET -> RewardsWalletScreen(onBack = { tabName = ShellTab.HOME.name }, onAddMoney = onAddMoney, onTransactions = onViewAllTransactions,onSendMoney=onSendMoney,onPayments={tabName=ShellTab.PAYMENTS.name},onProperty={tabName=ShellTab.PROPERTY.name},onServices={tabName=ShellTab.SERVICES.name},onChat={tabName=ShellTab.CHAT.name},onProfile={tabName=ShellTab.PROFILE.name},onSaved=onSavedClick)
+                    ShellTab.PROFILE -> ProfileScreen(onSignOut = onSignOut, onBack = { tabName = ShellTab.HOME.name }, onVerification = { tabName = ShellTab.VERIFICATION.name }, onWorkspace = { tabName = ShellTab.WORKSPACES.name })
+                    ShellTab.WORKSPACES -> com.homeapp.features.marketplace.WorkspaceScreen(onBack={tabName=ShellTab.HOME.name},onVerification={tabName=ShellTab.VERIFICATION.name},onPostProperty=onPostProperty,onBookings=onMyBookings,onServices=onHomeServices,onWorkflow={tabName=ShellTab.BOOKING_RULES.name},onPlans={tabName=ShellTab.PLANS.name},onChat={tabName=ShellTab.CHAT.name})
+                    ShellTab.PLANS -> com.homeapp.features.marketplace.PlansScreen(onBack={tabName=ShellTab.HOME.name})
+                    ShellTab.BOOKING_RULES -> com.homeapp.features.marketplace.BookingWorkflowScreen(onBack={tabName=ShellTab.WORKSPACES.name})
                     ShellTab.VERIFICATION -> com.homeapp.features.verification.VerificationScreen(onBack = { tabName = ShellTab.HOME.name }, onPostProperty = onPostProperty)
                 }
             }

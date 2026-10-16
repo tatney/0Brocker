@@ -17,6 +17,25 @@ internal object SeedData {
         }
     }
 
+    fun ensureRoleTestAccounts(db: HomeAppDatabase) {
+        val q=db.homeAppDatabaseQueries
+        for ((email,name,role) in listOf(
+            Triple("customer@test.0brocker.app","Test Customer","CUSTOMER"),
+            Triple("owner@test.0brocker.app","Test Owner","OWNER"),
+            Triple("provider@test.0brocker.app","Test Technician","PROVIDER")
+        )) {
+            if(q.selectUserByEmail(email).executeAsOneOrNull()==null) {
+                val id=q.userMaxId().executeAsOne()+1
+                q.insertUser(id,name,"",email,"TEST",0,PasswordHasher.hash("HomeTest!2026",email))
+                q.saveWorkspace(id,role,0,0)
+            }
+        }
+        if(com.homeapp.data.cloud.CloudRuntime.preview) {
+            val owner=q.selectUserByEmail("owner@test.0brocker.app").executeAsOne()
+            q.selectAllProperties().executeAsList().forEach {q.insertPropertyOwner(it.id,owner.id,owner.full_name,1)}
+        }
+    }
+
     fun seed(db: HomeAppDatabase) {
         val q = db.homeAppDatabaseQueries
 

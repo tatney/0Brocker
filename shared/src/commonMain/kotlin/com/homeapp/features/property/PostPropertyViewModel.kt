@@ -94,7 +94,11 @@ class PostPropertyViewModel : ViewModel() {
                     "company_id" to kotlinx.serialization.json.JsonPrimitive(s.companyIdentifier),
                     "bedrooms" to kotlinx.serialization.json.JsonPrimitive(s.bedrooms),
                 )).toString()
-                AppContainer.verificationRepository.submit(owner.id, "property", s.titleNumber,
+                if(com.homeapp.data.cloud.CloudRuntime.enabled) {
+                    val draft=kotlinx.serialization.json.Json.parseToJsonElement(payload) as kotlinx.serialization.json.JsonObject
+                    val details=com.homeapp.data.cloud.json("unit" to s.unitNumber,"relationship" to if(s.companyRepresentative) "owning_company_representative" else "individual_owner")
+                    com.homeapp.data.cloud.SupabaseGateway.rpc("submit_verification",com.homeapp.data.cloud.json("p_kind" to "property","p_subject" to s.titleNumber,"p_jurisdiction" to s.jurisdiction,"p_details" to kotlinx.serialization.json.JsonObject(draft+details)))
+                } else AppContainer.verificationRepository.submit(owner.id, "property", s.titleNumber,
                     s.jurisdiction, unit = s.unitNumber, relationship = if (s.companyRepresentative) "owning_company_representative" else "individual_owner", payload = payload)
             }
             if (submitted.isFailure) {
